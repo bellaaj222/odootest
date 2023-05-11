@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_hospital_patient_tree" model="ir.ui.view">
+        <field name="name">hospital.patient.tree</field>
+        <field name="model">hospital.patient</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" string="Patient Name"/>
+                <field name="ref"/>
+
+                <field name="age"/>
+                <field name="gender"/>
+
+            </tree>
+        </field>
+    </record>
+    <record id="view_hospital_patient_form" model="ir.ui.view">
+        <field name="name">hospital.patient</field>
+        <field name="model">hospital.patient</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="age"/>
+                        </group>
+                        <group>
+                            <field name="ref"/>
+
+                            <field name="gender"/>
+                            <field name="active" invisible="1"/>
+
+                        </group>
+                    </sheet>
+                </group>
+            </form>
+        </field>
+    </record>
+    <record id="view_hospital_patient_search" model="ir.ui.view">
+        <field name="name">hospital.patient.search</field>
+        <field name="model">hospital.patient</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Patient Name"
+                       filter_domain="['|', ('name', 'ilike', self), ('ref', 'ilike', self)]"/>
+                <field name="ref"/>
+                <filter name="filter_archived" string="Archived" domain="[('active','=', False)]"/> #ajouter un element dans le filtre
+
+            </search>
+        </field>
+    </record>
+    <record id="action_hospital_patient" model="ir.actions.act_window">
+        <field name="name">Patients</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">hospital.patient</field>
+        <field name="view_mode">tree,form,activity</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first patient
+            </p>
+            <p>
+                You must define a product for everything you sell or purchase,
+                whether it's a storable product, a consumable or a service.
+            </p>
+        </field>
+    </record>
+    <menuitem
+            id="menu_patient"
+            name="Patient"
+            action="action_hospital_patient"
+            parent="menu_patient_master"
+            sequence="0"/>
+
+
+</odoo>
