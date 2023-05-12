@@ -45,7 +45,7 @@
                 <field name="name" string="Patient Name"
                        filter_domain="['|', ('name', 'ilike', self), ('ref', 'ilike', self)]"/>
                 <field name="ref"/>
-                <filter name="filter_archived" string="Archived" domain="[('active','=', False)]"/> #ajouter un element dans le filtre
+                <filter name="filter_archived" string="Archived" domain="[('active','=', False)]"/>
 
             </search>
         </field>
