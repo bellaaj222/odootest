@@ -19,21 +19,26 @@
         <field name="model">hospital.patient</field>
         <field name="arch" type="xml">
             <form>
-                <group>
-                    <sheet>
-                        <group>
-                            <field name="name"/>
-                            <field name="age"/>
-                        </group>
-                        <group>
-                            <field name="ref"/>
 
-                            <field name="gender"/>
-                            <field name="active" invisible="1"/>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="age"/>
+                    </group>
+                    <group>
+                        <field name="ref"/>
 
-                        </group>
-                    </sheet>
-                </group>
+                        <field name="gender"/>
+                        <field name="active" invisible="1"/>
+
+                    </group>
+
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" groups="base.group_user"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
             </form>
         </field>
     </record>
@@ -46,7 +51,13 @@
                        filter_domain="['|', ('name', 'ilike', self), ('ref', 'ilike', self)]"/>
                 <field name="ref"/>
                 <filter name="filter_archived" string="Archived" domain="[('active','=', False)]"/>
-
+                <group expand="0" string="Group By">
+                    <filter string="Gender" name="group_by_gender" context="{'group_by':'gender'}"/>
+                </group>
+                <searchpanel>
+                    <field name="gender" string="Gender" enable_counters="1" select="multi"/>
+                    #PANELSEARCH select multi maantha cocher
+                </searchpanel>
             </search>
         </field>
     </record>
@@ -67,7 +78,7 @@
     </record>
     <menuitem
             id="menu_patient"
-            name="Patient"
+            name="Patients"
             action="action_hospital_patient"
             parent="menu_patient_master"
             sequence="0"/>
