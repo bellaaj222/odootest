@@ -22,10 +22,17 @@
             <form>
 
                 <sheet>
+                      <div class="oe_title">
+                        <h1>
+                            <div class="d-flex">
+                                <field name="priority" widget="priority" class="mr-3"/>
+                            </div>
+                        </h1>
+                    </div>
                     <group>
                         <field name="patient_id"/>
                         <field name="ref"/>
-
+                        <field name="booking_date"/>
                         <field name="appointment_time"/>
 
 
@@ -34,13 +41,12 @@
                     <notebook>
                         <page string="Prescription" name="prescription">
                             <group>
-                                <field name="booking_date"/>
+                                <field name="prescription" placeholder="Enter your prescription"/>
                             </group>
                         </page>
                         <page string="Pharmacy" name="pharmacy">
-                            <group>
 
-                                <field name="gender"/>
+                            <group>
                             </group>
                         </page>
                     </notebook>
