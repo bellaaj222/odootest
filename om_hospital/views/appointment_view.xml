@@ -7,6 +7,7 @@
             <tree>
                 <field name="patient_id"/>
                 <field name="gender"/>
+                <field name="ref"/>
 
                 <field name="appointment_time"/>
                 <field name="booking_date"/>
@@ -23,18 +24,24 @@
                 <sheet>
                     <group>
                         <field name="patient_id"/>
-                        <field name="gender"/>
+                        <field name="ref"/>
 
                         <field name="appointment_time"/>
 
 
                     </group>
                     <group>
-                        <field name="booking_date"/>
-
 
                     </group>
+                    <notebook>
+                        <page string="Prescription" name="prescription">
+                            <field name="booking_date"/>
+                        </page>
+                        <page string="Pharmacy" name="pharmacy">
+                            <field name="gender"/>
 
+                        </page>
+                    </notebook>
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" groups="base.group_user"/>

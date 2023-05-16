@@ -7,7 +7,6 @@
             <tree>
                 <field name="name" string="Patient Name"/>
                 <field name="ref"/>
-
                 <field name="age"/>
                 <field name="gender"/>
 
@@ -23,16 +22,15 @@
                 <sheet>
                     <group>
                         <field name="name"/>
+                        <field name="date_of_birth"/>
                         <field name="age"/>
                     </group>
                     <group>
                         <field name="ref"/>
-
+                        <field name="appointment_id"/>
                         <field name="gender"/>
                         <field name="active" invisible="1"/>
-
                     </group>
-
                 </sheet>
                 <div class="oe_chatter">
                     <field name="message_follower_ids" groups="base.group_user"/>
