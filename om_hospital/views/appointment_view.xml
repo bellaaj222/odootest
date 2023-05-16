@@ -30,16 +30,18 @@
 
 
                     </group>
-                    <group>
 
-                    </group>
                     <notebook>
                         <page string="Prescription" name="prescription">
-                            <field name="booking_date"/>
+                            <group>
+                                <field name="booking_date"/>
+                            </group>
                         </page>
                         <page string="Pharmacy" name="pharmacy">
-                            <field name="gender"/>
+                            <group>
 
+                                <field name="gender"/>
+                            </group>
                         </page>
                     </notebook>
                 </sheet>
