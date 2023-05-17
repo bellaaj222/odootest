@@ -4,13 +4,18 @@
         <field name="name">hospital.appointment.tree</field>
         <field name="model">hospital.appointment</field>
         <field name="arch" type="xml">
-            <tree>
+            <tree decoration-success="state =='done'" decoration-danger="state == 'cancel'"
+                  decoration-info="state == 'draft'"
+                  decoration-warning="state =='in_consultation'">
                 <field name="patient_id"/>
-                <field name="gender"/>
-                <field name="ref"/>
-
                 <field name="appointment_time"/>
                 <field name="booking_date"/>
+                <field name="state" decoration-success="state == 'done'"
+                       decoration-info="state == 'draft'"
+                       decoration-danger="state == 'cancel'"
+                       decoration-warning="state =='in_consultation'"
+                       widget="badge" optional="show"
+                />
 
             </tree>
         </field>
@@ -20,9 +25,12 @@
         <field name="model">hospital.appointment</field>
         <field name="arch" type="xml">
             <form>
-
+                <header>
+                    <field name="state" widget="statusbar" nolable="1"
+                           options="{'clickable': '1'}"/>
+                </header>
                 <sheet>
-                      <div class="oe_title">
+                    <div class="oe_title">
                         <h1>
                             <div class="d-flex">
                                 <field name="priority" widget="priority" class="mr-3"/>
@@ -33,8 +41,15 @@
                         <field name="patient_id"/>
                         <field name="ref"/>
                         <field name="booking_date"/>
+                    </group>
+                    <group>
                         <field name="appointment_time"/>
+                        <button name="action_test" srtring="z" type="object" class="oe_highlight"
+                                icon="fa-id-card-o"/>
 
+                        <button name="%(om_hospital.action_hospital_patient)d" string="Patients button" type="action"
+                                class="oe_highlight" help="ONclicking this you will be redirected to"
+                                confirm="Are you Sure To open"/>
 
                     </group>
 
