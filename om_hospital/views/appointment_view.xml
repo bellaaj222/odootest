@@ -9,7 +9,13 @@
                   decoration-warning="state =='in_consultation'">
                 <field name="patient_id"/>
                 <field name="appointment_time"/>
-                <field name="booking_date"/>
+                <field name="booking_date" optional="show"/>
+                <field name="ref" optional="show"/>
+                <field name="doctor_id" widget="many2one_avatar_user"/>
+
+                <!--                #bech uoli nejem nzid hwayej f tree-->
+                <field name="activity_ids" widget="list_activity"/>
+                <!--                #pour les icon et ajouter les activite v-->
                 <field name="state" decoration-success="state == 'done'"
                        decoration-info="state == 'draft'"
                        decoration-danger="state == 'cancel'"
@@ -41,6 +47,8 @@
                         <field name="patient_id"/>
                         <field name="ref"/>
                         <field name="booking_date"/>
+                        <field name="doctor_id"/>
+
                     </group>
                     <group>
                         <field name="appointment_time"/>
