@@ -6,7 +6,9 @@
         <field name="arch" type="xml">
             <tree decoration-success="state =='done'" decoration-danger="state == 'cancel'"
                   decoration-info="state == 'draft'"
-                  decoration-warning="state =='in_consultation'">
+                  decoration-warning="state =='in_consultation'"
+                  sample="1" multi_edit="1">
+                <!--  multi_edit to change edit// lors de ajouter sample="1 donner des examples -->
                 <field name="patient_id"/>
                 <field name="appointment_time"/>
                 <field name="booking_date" optional="show"/>
@@ -46,8 +48,8 @@
                     <group>
                         <field name="patient_id"/>
                         <field name="ref"/>
-                        <field name="booking_date"/>
-                        <field name="doctor_id"/>
+                        <field name="booking_date" default_focus="1"/>
+                        <field name="doctor_id" widget="many2one_avatar_user"/>
 
                     </group>
                     <group>
@@ -64,7 +66,8 @@
                     <notebook>
                         <page string="Prescription" name="prescription">
                             <group>
-                                <field name="prescription" placeholder="Enter your prescription"/>
+                                <field name="prescription" placeholder="Enter your prescription"
+                                       options="{'resizable':true}"/>
                             </group>
                         </page>
                         <page string="Pharmacy" name="pharmacy">
