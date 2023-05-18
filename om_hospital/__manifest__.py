@@ -9,7 +9,7 @@
     'summary': 'Hospital managment system',
     'description': """Hospital management system""",
 
-    'depends': ['mail'],
+    'depends': ['mail', 'product'],
     'data': ['security/ir.model.access.csv',
              'views/menu.xml',
              'views/patient_view.xml',

@@ -19,6 +19,7 @@ class HospitalAppointement(models.Model):
         [('draft', 'Draft'), ('in_consultation', 'In_consultation'), ('done', 'Done'), ('cancel', 'Cancel')],
         string='Status', default="draft", required="True")  # pour les starts de priotirity
     doctor_id = fields.Many2one('res.users', string='Doctor', tracking=True)
+    pharmacy_line_ids = fields.One2many('appointment.pharmacy.lines', 'appointment_id', string='Pharmacy Lines')
 
     @api.onchange('patient_id')
     def onchange_patient_id(self):
@@ -49,3 +50,13 @@ class HospitalAppointement(models.Model):
     def action_draft(self):
         for rec in self:
             rec.state = 'draft'
+
+
+class AppointmentPharmacyLines(models.Model):
+    _name = "appointment.pharmacy.lines"
+    _description = "Appointment Pharmacy Lines"
+
+    product_id = fields.Many2one('product.product')
+    pies_unit = fields.Float(string="Price")
+    qty = fields.Integer(string="quantity")
+    appointment_id = fields.Many2one('hospital.appointment', string="Appointment")
