@@ -20,6 +20,7 @@ class HospitalAppointement(models.Model):
         string='Status', default="draft", required="True")  # pour les starts de priotirity
     doctor_id = fields.Many2one('res.users', string='Doctor', tracking=True)
     pharmacy_line_ids = fields.One2many('appointment.pharmacy.lines', 'appointment_id', string='Pharmacy Lines')
+    hide_sales_price = fields.Boolean(string="Hide sales price")
 
     @api.onchange('patient_id')
     def onchange_patient_id(self):
@@ -57,6 +58,7 @@ class AppointmentPharmacyLines(models.Model):
     _description = "Appointment Pharmacy Lines"
 
     product_id = fields.Many2one('product.product')
-    pies_unit = fields.Float(string="Price")
-    qty = fields.Integer(string="quantity")
+    price_unit = fields.Float(string="Price", related='product_id.list_price')
+    # zidna related bech automatiquement tet3mal price
+    qty = fields.Integer(string="quantity", default="1")
     appointment_id = fields.Many2one('hospital.appointment', string="Appointment")
