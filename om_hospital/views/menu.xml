@@ -10,11 +10,16 @@
             name="Patient Details"
             parent="menu_hospital_root"
             sequence="0"/>
-        <menuitem
+    <menuitem
             id="menu_appointment_master"
             name="Appointments"
             parent="menu_hospital_root"
             sequence="20"/>
 
+    <menuitem
+            id="menu_configuration"
+            name="Configurations"
+            parent="menu_hospital_root"
+            sequence="10"/>
 
 </odoo>
