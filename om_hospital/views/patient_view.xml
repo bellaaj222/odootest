@@ -29,6 +29,8 @@
                     <group>
                         <field name="ref"/>
                         <field name="appointment_id"/>
+                        <field name="tag_ids" widget="many2many_tags"/>
+
                         <field name="gender"/>
                         <field name="active" invisible="1"/>
                     </group>
