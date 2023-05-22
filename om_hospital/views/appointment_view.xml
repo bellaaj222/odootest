@@ -1,5 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <record id="view_hospital_appointment_activity" model="ir.ui.view">
+        <field name="name">hospital.appointment.activity</field>
+        <field name="model">hospital.appointment</field>
+        <field name="arch" type="xml">
+            <activity string="Appointments">
+                <field name="patient_id"/>
+                <templates>
+                    <div t-name="activity-box">
+                        <img t-att-src="activity_image('hospital.patient', 'image', record.patient_id.raw_value)"
+                             role="img"
+                             t-att-title="record.patient_id.value" t-att-alt="record.patient_id.value"/>
+                        <div>
+                            <field name="ref" display="full"/>
+                        </div>
+                    </div>
+                </templates>
+            </activity>
+        </field>
+    </record>
     <record id="view_hospital_appointment_tree" model="ir.ui.view">
         <field name="name">hospital.appointment.tree</field>
         <field name="model">hospital.appointment</field>
@@ -22,8 +41,8 @@
                        decoration-info="state == 'draft'"
                        decoration-danger="state == 'cancel'"
                        decoration-warning="state =='in_consultation'"
-                       widget="badge" optional="show"
-                />
+                       widget="badge" optional="show"/>
+
 
             </tree>
         </field>
@@ -34,8 +53,15 @@
         <field name="arch" type="xml">
             <form>
                 <header>
-                    <field name="state" widget="statusbar" nolable="1"
-                           options="{'clickable': '1'}"/>
+                    <button name="action_in_consultation" string="In consultation" type="object" class="oe_highlight"
+                            states="draft"/>
+                    <button name="action_done" string="Mark As done" type="object" states="in_consultation"/>
+                    <!--                    nzido states ken f etape hathika yoli visible-->
+                    <button name="action_cancel" string="Cancel" type="object" states="draft,in_consultation"/>
+                    <button name="action_draft" string="Reset" type="object" states="cancel"/>
+
+                    <field name="state" widget="statusbar" nolable="1"/>
+                    <!--        options="{'clickable': '1'}"-->
                 </header>
                 <sheet>
                     <div class="oe_title">
@@ -53,13 +79,16 @@
 
                     </group>
                     <group>
+                        <field name="hide_sales_price" groups="base.group_no_one"/>
                         <field name="appointment_time"/>
                         <button name="action_test" srtring="z" type="object" class="oe_highlight"
-                                icon="fa-id-card-o"/>
+                                groups="base.group_no_one" icon="fa-id-card-o"/>
 
                         <button name="%(om_hospital.action_hospital_patient)d" string="Patients button" type="action"
-                                class="oe_highlight" help="ONclicking this you will be redirected to"
+                                groups="base.group_no_one" class="oe_highlight"
+                                help="ONclicking this you will be redirected to"
                                 confirm="Are you Sure To open"/>
+                        <!--                        groups="base.group_no_one" tÈot fil mode active devloppeur toli matethorch-->
 
                     </group>
 
@@ -72,8 +101,25 @@
                         </page>
                         <page string="Pharmacy" name="pharmacy">
 
-                            <group>
-                            </group>
+                            <field name="pharmacy_line_ids">
+                                <tree editable="botton">
+                                    <!--                                    ki nbedlo botton b top toli tetbedel fo9-->
+                                    <field name="product_id"/>
+                                    <field name="price_unit"
+                                           attrs="{
+                                            'column_invisible': [('parent.hide_sales_price', '=', True)]}"/>
+                                    <field name="qty"/>
+                                </tree>
+                                <form>
+                                    <group>
+                                        <field name="product_id"/>
+                                        <field name="price_unit" attrs="{
+                                            'column_invisible': [('parent.hide_sales_price', '=', True)]}"/>
+                                        <!--  zidnaha bech na7iw price -->
+                                        <field name="qty"/>
+                                    </group>
+                                </form>
+                            </field>
                         </page>
                     </notebook>
                 </sheet>

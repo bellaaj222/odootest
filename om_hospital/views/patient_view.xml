@@ -9,6 +9,8 @@
                 <field name="ref"/>
                 <field name="age"/>
                 <field name="gender"/>
+                <field name="tag_ids"/>
+
 
             </tree>
         </field>
@@ -20,6 +22,7 @@
             <form>
 
                 <sheet>
+                    <field name="image" widget="image" class="oe_avatar"/>
                     <group>
                         <field name="name"/>
                         <field name="date_of_birth"/>
@@ -28,6 +31,8 @@
                     <group>
                         <field name="ref"/>
                         <field name="appointment_id"/>
+                        <field name="tag_ids" widget="many2many_tags" options="{'color_field':'color'}"/>
+
                         <field name="gender"/>
                         <field name="active" invisible="1"/>
                     </group>
