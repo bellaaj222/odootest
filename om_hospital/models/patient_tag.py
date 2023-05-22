@@ -8,3 +8,4 @@ class PatientTag(models.Model):
     name = fields.Char(string="Name", required=True)
     active = fields.Boolean(string="Active", default=True)
     color = fields.Char(string="Color")
+    # patient_tag_id = fields.Many2one('hospital.patient')
