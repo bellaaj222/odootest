@@ -9,7 +9,7 @@
                 <field name="ref"/>
                 <field name="age"/>
                 <field name="gender"/>
-                <field name="tag_ids" nolable="1"/>
+                <field name="tag_ids"/>
 
 
             </tree>
