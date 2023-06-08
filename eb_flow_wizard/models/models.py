@@ -5,6 +5,7 @@ from odoo import models, fields, api
 class MergeflowsLine(models.Model):
     _name = 'base.flow.merge.line'
     _order = 'min_id asc'
+
     wizard_id = fields.Many2one('base.flow.merge.automatic.wizard', string='Wizard')
 
     min_id = fields.Integer(string='Wizard')
@@ -51,14 +52,45 @@ class MergeflowsLine(models.Model):
     done = fields.Boolean('is done')
     color1 = fields.Integer('Nbdays')
 
-    # uom_id_r = fields.Many2one('product.uom', string='Wizard')
+    uom_id_r = fields.Many2one('product.uom', string='Wizard')
 
 
 class EbMergeflows(models.Model):
     _name = "base.flow.merge.automatic.wizard"
     _description = "Merge flows"
     _rec_name = 'name'
-    current_user = fields.Many2one('res.users', compute='_get_current_user')
+
+    # @api.model
+    # def _get_current_user(self):
+    #     self.done = False
+
+    # @api.model
+    # def _amount_all(self):
+    #     tax_obj = self.env['account.tax']
+    #
+    #     tvp_obj = tax_obj.browse(8)
+    #     tps_obj = tax_obj.browse(7)
+    #     for flow in self:
+    #         flow.amount_untaxed = 0
+    #         flow.amount_tps = 0
+    #         flow.amount_tvq = 0
+    #         flow.amount_total = 0
+    #
+    #         if flow.employee_id.job_id.id == 1:
+    #             tvq = 0
+    #             tps = 0
+    #         else:
+    #             tvq = tvp_obj.amount
+    #             tps = tps_obj.amount
+    #
+    #         for line in flow.line_ids:
+    #             flow.amount_untaxed += line.amount_line
+    #
+    #         flow.amount_tps = flow.amount_untaxed * tps
+    #         flow.amount_tvq = flow.amount_untaxed * tvq
+    #         flow.amount_total = flow.amount_untaxed + flow.amount_tps + flow.amount_tvq
+
+    # current_user = fields.Many2one('res.users', compute='_get_current_user')
     gest_id = fields.Many2one('hr.employee', string='Wizard')
     work_ids = fields.Many2many('project.task.work', string='flows', readonly=True,
                                 states={'draft': [('readonly', False)]}, )
@@ -133,10 +165,10 @@ class EbMergeflows(models.Model):
 
     uom_id_r = fields.Many2one('product.uom', string='Assigned')
     uom_id = fields.Many2one('product.uom', string='Assigned')
-    amount_untaxed = fields.Float(compute='_amount_all', string='Name')
-    amount_total = fields.Float(compute='_amount_all', string='Name')
-    amount_tvq = fields.Float(compute='_amount_all', string='Name')
-    amount_tps = fields.Float(compute='_amount_all', string='Name')
+    # amount_untaxed = fields.Float(compute='_amount_all', string='Name')
+    # amount_total = fields.Float(compute='_amount_all', string='Name')
+    # amount_tvq = fields.Float(compute='_amount_all', string='Name')
+    # amount_tps = fields.Float(compute='_amount_all', string='Name')
     categ_id = fields.Many2one('product.category', string='Wizard', readonly=True,
                                states={'draft': [('readonly', False)]}, )
     employee_ids = fields.Many2many('hr.employee', 'base_flow_merge_automatic_wizard_hr_employee_rel',
@@ -155,13 +187,6 @@ class ProjectTaskWork(models.Model):
     _description = 'Task Work'
 
     name = fields.Char(string='Name')
-
-
-class ProjectTask(models.Model):
-    _name = 'project.task'
-    _description = 'Project Task '
-
-    name = fields.Char(string='Nam')
 
 
 class ProjectTaskWorkLine(models.Model):

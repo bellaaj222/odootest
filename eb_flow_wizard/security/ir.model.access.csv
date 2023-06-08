@@ -1,4 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access.hospital.patient,access_hospital_patient,om_hospital.model_hospital_patient,base.group_user,1,1,1,1
 access.base.flow.merge.line,access_base_flow_merge_line,eb_flow_wizard.model_base_flow_merge_line,base.group_user,1,1,1,1
 access.base.flow.merge.automatic.wizard,access_base_flow_merge_automatic_wizard,eb_flow_wizard.model_base_flow_merge_automatic_wizard,base.group_user,1,1,1,1
+access.project.task.work,access_project_task_work,eb_flow_wizard.model_project_task_work,base.group_user,1,1,1,1
