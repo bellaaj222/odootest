@@ -1,5 +1,9 @@
 from datetime import datetime, date
+
+from stdnum import py
+
 from odoo import models, fields, api
+from odoo.exceptions import UserError
 from odoo.tools.translate import _
 
 
@@ -183,6 +187,8 @@ class EbMergeflows(models.Model):
     employee_ids2 = fields.Many2many('hr.employee', 'base_flow_merge_automatic_wizard_hr_employee_rel2',
                                      'base_flow_merge_automatic_wizard_id', 'hr_employee_id', string='Legumes',
                                      readonly=True, states={'draft': [('readonly', False)]}, )
+    kit = fields.Char(string='Kit')
+    kit_id = fields.Char(string='Kit_id')
 
     # @api.onchange('actions')
     # def onchange_actions(self):
@@ -194,6 +200,229 @@ class EbMergeflows(models.Model):
     #                 message = {'title': _('Attention'), 'message': _("Attention la tache: %s est en cours") % work.name}
     #                 return {'warning': message}
     #     return {}
+
+    def button_cancel(self):
+
+        work_obj = self.env['project.task.work']
+        line_obj = self.env['base.flow.merge.automatic.wizard']
+        line_obj1 = self.env['base.flow.merge.line']
+        work_line = self.env['project.task.work']
+
+        for tt in self.work_ids:
+            for msg_id in tt.ids:
+                wk = work_obj.browse(msg_id)
+                wk.write({'state': 'draft'})
+
+        line_obj.write({'state': 'draft'})
+
+        return {
+            'name': 'Affectation les Travaux',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'target': 'new',
+            'res_model': 'base.flow.merge.automatic.wizard',
+            'res_id': self.id,
+            'context': {'default_state': 'draft'},
+            'domain': []
+        }
+
+    def button_approve(self):
+
+        tt = []
+        # if self.env.cr.dbname == 'TEST95':
+        #     connection = py.connect(host='localhost', user='root', passwd='', db='rukovoditel_en', use_unicode=True,
+        #                             charset="utf8")
+        #     cursor = connection.cursor()
+
+        if not self.actions:
+            raise UserError(_('Vous devez obligatoirement sélectionner une action!'))
+
+        for line in self.line_ids:
+            l1 = line.work_id
+            if self.actions == 'keep':
+                if self.project_id.is_kit:
+                    self.env.cr.execute(
+                        'UPDATE project_task_work SET active = %s, display = %s WHERE kit_id = %s AND project_id = %s AND zone = %s AND secteur = %s',
+                        (True, True, l1.kit_id.id, self.project_id.id, l1.zone, l1.secteur))
+                else:
+                    self.env.cr.execute('UPDATE project_task_work SET active = %s, display = %s WHERE id = %s',
+                                        (True, True, l1.id))
+
+            elif self.actions == 'suspend':
+                if self.project_id.is_kit:
+                    self.env.cr.execute(
+                        'UPDATE project_task_work SET state = %s WHERE task_id = %s AND zone = %s AND secteur = %s AND project_id = %s AND kit_id',
+                        ('pending', l1.task_id.id, l1.zone, l1.secteur, self.project_id.id, l1.kit_id))
+                else:
+                    self.env.cr.execute(
+                        'UPDATE project_task_work SET state = %s WHERE task_id = %s AND zone = %s AND secteur = %s',
+                        ('pending', l1.task_id.id, l1.zone, l1.secteur))
+
+            elif self.actions == 'permis':
+                if self.project_id.is_kit:
+                    self.env.cr.execute(
+                        'UPDATE project_task_work SET state = %s WHERE kit_id = %s AND project_id = %s AND zone = %s AND secteur = %s',
+                        ('valid', l1.kit_id.id, self.project_id.id, l1.zone, l1.secteur))
+                else:
+                    print('Executing SQL query: UPDATE project_task_work SET state = %s WHERE id = %s' % (
+                        'valid', int(l1.id)))
+
+                    self.env.cr.execute('UPDATE project_task_work SET state = %s WHERE id = %s', ('valid', int(l1.id)))
+                if self.env.cr.dbname == 'TEST95':
+                    sql1 = ("update app_entity_26 set field_244='75' WHERE id = %s")
+                    self.env.cr.execute(sql1, (l1.work_id.id,))
+                    # connection.commit()
+
+                for kk in l1.work_id.line_ids:
+                    rec_line = self.env['project.task.work.line'].browse(kk)
+                    if rec_line.group_id2:
+                        if rec_line.group_id2.ids not in tt:
+                            tt.append(rec_line.group_id2.ids)
+
+            elif self.actions == 'archiv':
+                if self.project_id.is_kit:
+                    self.env.cr.execute(
+                        'UPDATE project_task_work SET active = %s WHERE kit_id = %s AND project_id = %s AND zone = %s AND secteur = %s',
+                        (False, l1.kit_id.id, self.project_id.id, l1.zone, l1.secteur))
+                else:
+                    self.env.cr.execute('UPDATE project_task_work SET active = %s WHERE id = %s', (False, l1.id))
+
+                if self.env.cr.dbname == 'TEST95':
+                    sql1 = ("update app_entity_26 set field_276=False WHERE id = %s")
+                    self.env.cr.execute(sql1, (l1.work_id.id,))
+                    # connection.commit()
+
+        res_user = self.env['res.users'].browse(self._uid)
+        for line in self.line_ids:
+            l1 = line.work_id
+            wk_histo = self.env['work.histo'].search([('work_id', '=', l1.id)])
+            wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+
+            self.env['work.histo.line'].create({
+                'actions': self.actions,
+                'type': 'aw',
+                'execute_by': self.employee_id.name or False,
+                'create_by': res_user.employee_id.name,
+                'work_histo_id': wk_histo_id,
+                'date': fields.Datetime.now(),
+                'coment1': self.note or False,
+                'id_object': self.id,
+            })
+
+    def button_affect(self):
+        work_obj = self.env['base.flow.merge.automatic.wizard']
+
+        j = []
+        r = []
+        l = []
+        pref = ''
+        test = ''
+        list = []
+        link = []
+        state = 'draft'
+
+        self.env.cr.execute(
+            'SELECT CAST(SUBSTR(name, 5, 7) AS INTEGER) FROM base_invoices_merge_automatic_wizard WHERE name IS NOT NULL AND categ_id=1 AND EXTRACT(YEAR FROM create_date)=%s ORDER BY CAST(name AS INTEGER) DESC LIMIT 1',
+            (str(fields.Date.today().strftime('%Y%m%d'))[:4],))
+        q3 = self.env.cr.fetchone()
+
+        if q3:
+            res1 = q3[0] + 1
+        else:
+            res1 = '001'
+
+        aff = self.env['base.invoices.merge.automatic.wizard'].create({'state': 'draft'})
+
+        if self.link_ids:
+            for ll in self.link_ids:
+                self.env['link.line'].create({'ftp': ll.ftp, 'name': ll.name, 'affect_id': aff.id})
+                link.append((0, 0, {'ftp': ll.ftp, 'name': ll.name, 'affect_id': aff.id}))
+
+        for jj in self.work_ids:
+            work = self.env['project.task.work'].browse(jj.id)
+            self.env.cr.execute(
+                'SELECT base_invoices_merge_automatic_wizard_id FROM base_invoices_merge_automatic_wizard_project_task_work_rel WHERE base_invoices_merge_automatic_wizard_id=%s LIMIT 1',
+                (aff.id,))
+            tt = self.env.cr.fetchone()
+
+            if not tt:
+                self.env.cr.execute(
+                    "INSERT INTO base_invoices_merge_automatic_wizard_project_task_work_rel VALUES (%s,%s)",
+                    (aff.id, work.id))
+
+            if work.state == 'close':
+                raise UserError(_('Erreur!'), _("Travaux clotués!"))
+
+            done = 0
+            if work.gest_id.user_id.id == self._uid:
+                done = 1
+            else:
+                done = 0
+
+            if work.state != 'draft':
+                state = 'affect'
+            r.append(work.categ_id.id)
+            j.append(work.id)
+
+            if r:
+                for kk in r:
+                    dep = self.env['hr.academic'].search([('categ_id', '=', kk)])
+                    if dep:
+                        for nn in dep:
+                            em = self.env['hr.academic'].browse(nn).employee_id.id
+                            l.append(em)
+            cat = work[0].categ_id.id
+            test = test + pref + str(work.project_id.name) + ' - ' + str(work.task_id.sequence) + ' - ' + str(
+                work.sequence)
+
+            if cat == 1:
+                name = str(str(fields.Date.today().strftime('%Y%m%d'))[:4] + str(str(res1).zfill(3)))
+            else:
+                name = ''
+
+        return {
+            'name': ('Affectation des Ressources'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'base.invoices.merge.automatic.wizard',
+            'res_id': aff.id,
+            'context': {'default_color1': 1, 'color1': 1},
+            'target': 'new',
+            'flags': {'initial_mode': 'edit'}
+        }
+
+    def button_load_mail(self):
+        work_line = self.env['project.task.work']
+        emp_obj = self.env['hr.employee']
+        this = self
+
+        kk = []
+        kk1 = []
+
+        for line in this.work_ids:
+            l1 = work_line.browse(line.id)
+            if l1.gest_id and l1.gest_id.id not in kk:
+                kk.append(l1.gest_id.id)
+                self.env.cr.execute(
+                    "INSERT INTO base_flow_merge_automatic_wizard_hr_employee_rel (base_flow_merge_automatic_wizard_id, hr_employee_id) VALUES (%s, %s)",
+                    (this.id, l1.gest_id.id))
+
+            if l1.gest_id3 and l1.gest_id3.id not in kk1:
+                kk1.append(l1.gest_id3.id)
+                self.env.cr.execute(
+                    "INSERT INTO base_flow_merge_automatic_wizard_hr_employee_rel1 (base_flow_merge_automatic_wizard_id, hr_employee_id) VALUES (%s, %s)",
+                    (this.id, l1.gest_id3.id))
+
+        return {
+            'name': ('Affectation les Travaux'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'target': 'new',
+            'res_model': 'base.flow.merge.automatic.wizard',
+            'res_id': this.id,
+            'domain': []
+        }
 
 
 class ProjectTaskWork(models.Model):
@@ -229,6 +458,12 @@ class ProjectTaskWork(models.Model):
     ],
         'Status', copy=False)
 
+    work_id = fields.Many2one('project.task.work', string='Work')
+    active = fields.Boolean(string='Is doctor?')
+    line_ids = fields.One2many(
+        'base.flow.merge.line', 'wizard_id', string=u"Role lines", copy=True,
+        states={'draft': [('readonly', False)]}, )
+
 
 class ProjectTaskWorkLine(models.Model):
     _name = 'project.task.work.line'
@@ -247,3 +482,63 @@ class LinkLine(models.Model):
     name = fields.Char(string='Name')
 
     ftp = fields.Char(string='Name')
+
+
+class WorkHisto(models.Model):
+    _name = 'work.histo'
+    _description = 'Work Histo'
+
+    name = fields.Char(string='Name')
+    work_id = fields.Many2one('project.task.work', string='Work')
+    histo_line_ids = fields.One2many('work.histo.line', 'work_histo_id', string='Histo Lines')
+
+
+class WorkHistoLine(models.Model):
+    _name = 'work.histo.line'
+    _description = 'Work Histo Line'
+
+    actions = fields.Selection([
+        ('keep', 'Keep'),
+        ('suspend', 'Suspend'),
+        ('permis', 'Permis'),
+        ('archiv', 'Archiv')
+    ], string='Actions')
+    type = fields.Selection([
+        ('aw', 'AW')
+    ], string='Type')
+    create_by = fields.Char(string='Created By')
+    work_histo_id = fields.Many2one('work.histo', string='Work Histo')
+    date = fields.Datetime(string='Date')
+    coment1 = fields.Text(string='Comment 1')
+    id_object = fields.Integer(string='Object ID')
+    execute_by = fields.Boolean(default="False")
+
+
+class BaseInvoicesMergeAutomaticWizard(models.Model):
+    _name = 'base.invoices.merge.automatic.wizard'
+    _description = 'Base Invoices Merge Automatic Wizard'
+
+    name = fields.Char(string='Name')
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('affect', 'Affect'),
+    ], string='State')
+    categ_id = fields.Many2one('product.category', string='Wizard', readonly=True,
+                               states={'draft': [('readonly', False)]}, )
+
+
+class ProjectProject(models.Model):
+    _inherit = 'project.project'
+    is_kit = fields.Boolean(default=True, )
+
+
+class BaseInvoicesMergeAutomaticWizardProjectTaskWorkRel(models.Model):
+    _name = 'base.invoices.merge.automatic.wizard.project.task.work.rel'
+    _description = 'Base Invoices Merge Automatic Wizard Project Task Work Relation'
+
+    # base_invoices_merge_automatic_wizard_id = fields.Many2one('base.invoices.merge.automatic.wizard', string='Wizard')
+    # project_task_work_id = fields.Many2one('project.task.work', string='Task Work')
+
+    # Add other fields as needed
+
+    name = fields.Char(string='Field Label')

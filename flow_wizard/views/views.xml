@@ -9,10 +9,10 @@
                 <header>
 
 
-                    <!--                    <button name="button_approve" type="object" string="Valider le Traitement" class="oe_highlight"-->
-                    <!--                            confirm="Valider l'action Workflow?" states='draft'/>-->
-                    <!--                    <button name="button_cancel" type="object" string="Annuler le Traitement" class="oe_highlight"-->
-                    <!--                            confirm="Annuler l'action Workflow?" states='affect' invisible="1"/>-->
+                    <button name="button_approve" type="object" string="Valider le Traitement" class="oe_highlight"
+                            confirm="Valider l'action Workflow?" states='draft'/>
+                    <button name="button_cancel" type="object" string="Annuler le Traitement" class="oe_highlight"
+                            confirm="Annuler l'action Workflow?" states='affect' invisible="1"/>
 
 
                     <field name="state" widget="statusbar" statusbar_visible="draft,affect"
@@ -53,9 +53,10 @@
                             <group>
                                 <group>
                                     <field name="project_id" invisible="1"/>
-                                    <field name="time_ch" widget="odoo_timepicker"
-                                           options="{'step': 5, 'minTime': '00:00', 'maxTime': '10:00','timeFormat':'H:i'}"
+                                    <field name="time_ch" widget="timepicker"
+                                           options="{'step': 5, 'minTime': '00:00', 'maxTime': '10:00', 'timeFormat': 'H:i'}"
                                            required="1"/>
+
                                     <field name="actions" string="Actions" required="1"/>
                                     <field name="categ_id" string="Département"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
@@ -69,9 +70,9 @@
                                     <field name="date_start_r" string="Date Début" widget="date" readonly="0"/>
                                     <field name="date_end_r" string="Date Fin" widget="date" readonly="0"/>
                                     <field name="poteau_r" string="Qtée A Lancer"/>
-                                    <!--                                    <button name="button_affect" type="object" string="Affect. Ressource"-->
-                                    <!--                                            class="oe_highlight" confirm="Voulez-vous affecter les ressources?"-->
-                                    <!--                                            icon="terp-personal" attrs="{'invisible': [('state', '=', 'draft')]}"/>-->
+                                    <button name="button_affect" type="object" string="Affect. Ressource"
+                                            class="oe_highlight" confirm="Voulez-vous affecter les ressources?"
+                                            icon="terp-personal"/>
 
 
                                 </group>
@@ -92,8 +93,8 @@
                                     <field name="employee_ids" string="A" widget='many2many_tags'
                                            options="{'no_create': True}"/>
                                     <newline/>
-                                    <!--                                    <button name="button_load_mail" type="object" string="" icon="gtk-leave-fullscreen"-->
-                                    <!--                                            class="btn-primary"/>-->
+                                    <button name="button_load_mail" type="object" string="" icon="gtk-leave-fullscreen"
+                                            class="btn-primary"/>
                                     <newline/>
 
                                     <field name="employee_ids1" string="CC" widget='many2many_tags'
@@ -141,38 +142,38 @@
                         <newline/>
 
 
-                        <field name="work_ids" nolabel="1" options="{'no_create': True}">
+                        <field name="work_ids" nolabel="1">
                             <tree string="Taches" editable="bottom"
                                   colors="blue:state== 'draft';green:state== 'affect';purple:state== 'tovalid'"
-                                  readonly="1">
+                                  readonly="0">
 
 
-                                <field name="project_id" invisible="context.get('user_invisible', False)" readonly="1"
+                                <field name="project_id" invisible="context.get('user_invisible', False)" readonly="0"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                        string="Projet"/>
 
-                                <field name="task_id" invisible="context.get('user_invisible', False)" readonly="1"
+                                <field name="task_id" invisible="context.get('user_invisible', False)" readonly="0"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                        string="Taches"/>
-                                <field name="name" string="Nom Travaux" readonly="1"
+                                <field name="name" string="Nom Travaux" readonly="0"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
                                 <field name="kit_id" string="Kit"/>
                                 <field name="date_start" string="Date Début" widget="date"
-                                       on_change="onchange_date_start_x(date_start)"/>
+                                />
                                 <field name="date_end" string="Date Fin" widget="date"
-                                       on_change="onchange_date_end_x(date_end)"/>
+                                />
 
                                 <field name="uom_id" string="Unité" sum="Total"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
 
                                 <field name="poteau_t" string="Qté/Unité" sum="Total"
-                                       on_change="onchange_poteau_t_x(poteau_t)"/>
+                                />
 
-                                <field name="gest_id" string="Superviseur" widget="selection" readonly="1"
+                                <field name="gest_id" string="Superviseur" widget="selection" readonly="0"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
 
 
-                                <field name="state" string="Statut" readonly="1"/>
+                                <field name="state" string="Statut" readonly="0"/>
 
                             </tree>
                         </field>
