@@ -228,7 +228,13 @@ class EbMergeflows(models.Model):
         }
 
     def button_approve(self):
-
+        line_obj = self.pool.get('base.flow.merge.automatic.wizard')
+        line_obj1 = self.pool.get('base.flow.merge.line')
+        work_line = self.pool.get('project.task.work')
+        wl = self.pool.get('project.task.work.line')
+        task_line = self.pool.get('base.flow.merge.line')
+        task_obj = self.pool.get('project.task')
+        emp_obj = self.pool.get('hr.employee')
         tt = []
         # if self.env.cr.dbname == 'TEST95':
         #     connection = py.connect(host='localhost', user='root', passwd='', db='rukovoditel_en', use_unicode=True,
@@ -424,6 +430,47 @@ class EbMergeflows(models.Model):
             'domain': []
         }
 
+    def button_save_(self):
+        # Récupérer l'enregistrement actuel
+        this = self
+
+        # Obtenir les objets des modèles correspondants
+        work_obj = self.env['base.flow.merge.automatic.wizard']
+        task_work_obj = self.env['project.task.work']
+        task_work = self.env['project.task.work']
+
+        # Initialiser les listes pour stocker les données
+        ltask1 = []
+        ltask2 = []
+
+        # Insérer les enregistrements dans la table de relation
+        for jj in ltask2:
+            self.env.cr.execute("""
+                 INSERT INTO base_flow_merge_automatic_wizard_project_task_work_rel (base_flow_merge_automatic_wizard_id, project_task_work_id)
+                 VALUES (%s, %s)
+             """, (this.id, jj))
+
+        # Mettre à jour les enregistrements dans la table project_task_work
+        for line in this.work_ids.ids:
+            tt = task_work_obj.browse(line)
+            self.env.cr.execute("""
+                 UPDATE project_task_work
+                 SET poteau_t = %s, date_start = %s, date_end = %s
+                 WHERE id = %s
+             """, (tt.poteau_t, tt.date_start, tt.date_end, tt.id))
+
+        # Retourner l'action à exécuter après le bouton Enregistrer
+        return {
+            'name': 'Affectation les Travaux',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'base.flow.merge.automatic.wizard',
+            'res_id': this.id,
+            'target': 'new',
+            'context': {},
+            'domain': [],
+        }
+
 
 class ProjectTaskWork(models.Model):
     _name = 'project.task.work'
@@ -542,3 +589,4 @@ class BaseInvoicesMergeAutomaticWizardProjectTaskWorkRel(models.Model):
     # Add other fields as needed
 
     name = fields.Char(string='Field Label')
+

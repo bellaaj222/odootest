@@ -137,8 +137,8 @@
                     </notebook>
 
                     <group string="Taches A  Valider">
-                        <!--                        <button name="button_save_" type="object" string="Charger les Taches" class="oe_highlight"-->
-                        <!--                                confirm="Charger les Taches à activer?" states='draft' invisible="1"/>-->
+                        <button name="button_save_" type="object" string="Charger les Taches" class="oe_highlight"
+                                confirm="Charger les Taches à activer?" states='draft' invisible="1"/>
                         <newline/>
 
 
