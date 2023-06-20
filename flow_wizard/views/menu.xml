@@ -2,30 +2,18 @@
 <odoo>
 
     <menuitem
-            id="menu_hospital_root"
-            name="Hospital"
+            id="menu_Projet_root"
+            name="Projet"
             sequence="0"/>
     <menuitem
-            id="menu_patient_master"
-            name="Patient Details"
-            parent="menu_hospital_root"
+            id="menu_ActionWrk_master"
+            name="Recherche Action Work Flow"
+            parent="menu_Projet_root"
             sequence="0"/>
     <menuitem
-            id="menu_appointment_master"
-            name="Appointments"
-            parent="menu_hospital_root"
-            sequence="20"/>
-
-    <menuitem
-            id="menu_configuration"
-            name="Configurations"
-            parent="menu_hospital_root"
-            sequence="100"/>
-    <menuitem
-            id="menu_cancel_appointment"
-            name="Cancellation"
-            parent="menu_appointment_master"
-            action="action_cancel_appointment"
+            id="menu_taches_master"
+            name="Recherche Taches"
+            parent="menu_Projet_root"
             sequence="20"/>
 
 

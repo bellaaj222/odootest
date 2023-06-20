@@ -65,6 +65,112 @@ class EbMergeflows(models.Model):
     _description = "Merge flows"
     _rec_name = 'name'
 
+    @api.model
+    def default_get(self, fields):
+        print("default_get")
+
+        res = super(EbMergeflows, self).default_get(fields)
+        active_ids = self.env.context.get('active_ids')
+
+        for task in active_ids:
+            work = self.env['project.task.work'].browse(task)
+            context = self._context
+            current_uid = context.get('uid')
+            res_user = self.env['res.users'].browse(current_uid)
+            categ_ids = self.env['hr.academic'].search([('employee_id', '=', res_user.employee_id.id)])
+            jj = []
+            if self.env.context.get('active_model') == 'project.task.work' and active_ids:
+                if categ_ids:
+                    for ll in categ_ids.ids:
+                        dep = self.env['hr.academic'].browse(ll)
+                        jj.append(dep.categ_id.id)
+                if work.categ_id.id not in jj:
+                    raise UserError(_('Action impossible!'))
+        if self.env.context.get('active_model') == 'project.task.work' and active_ids:
+            print("2")
+            ## res['work_ids'] = active_ids
+            ##wiz_id=self.env['base.flow.merge.automatic.wizard'].create({'work_ids': active_ids}) 'wizard_id': wiz_id,
+            ##res.update({})
+            r = []
+            pref = ''
+            test = ''
+            list = []
+            state = 'draft'
+            l = []
+            l1 = []
+            l2 = []
+            for jj in active_ids:
+                work = self.env['project.task.work'].browse(jj)
+                if work.project_id.id not in l:
+                    l.append(work.project_id.id)
+                if len(l) > 1:
+                    raise UserError(_('Action impossible!'), _("Action possible pour un seul projet  !"))
+                if work.zone not in l1:
+                    l1.append(work.zone)
+                if len(l1) > 1:
+                    raise UserError(_('Action impossible!'), _("Action possible pour une seule zone  !"))
+                if work.secteur not in l2:
+                    l2.append(work.secteur)
+                if len(l2) > 1:
+                    raise UserError(_('Action impossible!'), _("Action possible pour un seul secteur  !"))
+                r = []
+                for task_id in active_ids:
+                    work = self.env['project.task.work'].browse(task_id)
+                    record_vals = {
+                        'work_id': work.id,
+                        'date_start_r': work.date_start,
+                        'date_end_r': work.date_end,
+                        'color1': work.color,
+                        # 'uom_id_r': work.uom_id.id,
+                        'poteau_t': work.poteau_t,
+                        'gest_id': work.gest_id.id,
+                        'state': work.state
+                    }
+                    r.append((0, 0, record_vals))
+
+                res.update({'line_ids': r, 'project_id': work.project_id.id, 'zo': work.zo, 'sect': work.sect})
+
+            res.update({'line_ids': r, 'project_id': work.project_id.id, 'zo': work.zo, 'sect': work.sect})
+        elif (self.env.context.get('active_model') == 'base.group.merge.automatic.wizard'):
+            print("3")
+            res = super(EbMergeflows, self).default_get(fields)
+
+            tt = self.env['base.group.merge.automatic.wizard'].browse(self.env.context.get('active_ids'))
+            ##   res['work_ids'] = tt.work_ids.ids
+            active_ids = tt.work_ids.ids
+            r = []
+            pref = ''
+            test = ''
+            list = []
+            state = 'draft'
+            l = []
+            l1 = []
+            l2 = []
+            for jj in active_ids:
+                work = self.env['project.task.work'].browse(jj)
+                if work.project_id.id not in l:
+                    l.append(work.project_id.id)
+                if len(l) > 1:
+                    raise UserError(_('Action impossible!'), _("Action possible pour un seul projet  !"))
+                if work.zone not in l1:
+                    l1.append(work.zone)
+                if len(l1) > 1:
+                    raise UserError(_('Action impossible!'), _("Action possible pour une seule zone  !"))
+                if work.secteur not in l2:
+                    l2.append(work.secteur)
+                if len(l2) > 1:
+                    raise UserError(_('Action impossible!'), _("Action possible pour un seul secteur  !"))
+                r.append((0, 0, {'work_id': work.id, 'date_start_r': work.date_start, 'date_end_r': work.date_end,
+                                 'color1': work.color, 'uom_id_r': work.uom_id.id, 'poteau_t': work.poteau_t,
+                                 'gest_id': work.gest_id.id, 'state': work.state
+                                 }))
+            res.update({'line_ids': r, 'project_id': work.project_id.id, 'zo': work.zo, 'sect': work.sect})
+
+        ##
+        ##                test=test+pref+str(work.project_id.name) +' - '+str(work.task_id.sequence)+' - '+str(work.sequence)
+
+        return res
+
     @api.depends('done')
     def _get_current_user(self):
         for record in self:
@@ -694,6 +800,30 @@ class ProjectTaskWork(models.Model):
 
     categ_id = fields.Many2one('product.category', string='categ_id',
                                )
+    color = fields.Integer(string='Nbdays')
+    zo = fields.Char(string='Zone')
+    sect = fields.Char(string='Secteur', readonly=True, states={'draft': [('readonly', False)]}, )
+
+    def action_open(self):
+        current = self.ids[0]
+        l = []
+        this = self.browse(current)
+        if this.line_ids:
+            for tt in this.line_ids.ids:
+                l.append(tt)
+
+        return {
+            'name': 'Taches Concernées',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'target': 'new',
+            'res_model': 'base.flow.merge.automatic.wizard',
+
+            'context': {'active_ids': self.ids,
+                        'active_model': self._name},
+            'domain': []
+        }
 
 
 class ProjectTaskWorkLine(models.Model):
@@ -808,3 +938,11 @@ class BaseGroupMergeAutomaticWizard(models.Model):
 class BaseGroup(models.Model):
     _name = "base.group"
     name = fields.Char('Name')
+
+
+class HrAcademic(models.Model):
+    _name = 'hr.academic'
+
+    diploma = fields.Char(string='Diploma', translate=True)
+    employee_id = fields.Many2one('hr.employee', string='Employee')
+    categ_id = fields.Many2one('product.category', string=' Professional Experiences', )

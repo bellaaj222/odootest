@@ -146,7 +146,7 @@
                             <tree string="Taches" editable="bottom"
                                   colors="blue:state== 'draft';green:state== 'affect';purple:state== 'tovalid'"
                                   readonly="0">
-                                <field name="project_id" readonly="0" string="Projet" />
+                                <field name="project_id" readonly="0" string="Projet"/>
                                 <field name="work_id" string="Work" widget="many2one" options="{'no_create': True}"/>
                                 <field name="name" string="Nom Travaux" readonly="0"/>
                                 <field name="kit_id" string="Kit"/>
@@ -191,6 +191,7 @@
             id="menu_action_flow_root"
             name=" Action Workflow"
             action="base_flow_merge_automatic_wizard_action"
+            parent="menu_ActionWrk_master"
             sequence="0"/>
 
 </odoo>
