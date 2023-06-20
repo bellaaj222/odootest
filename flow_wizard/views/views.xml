@@ -27,8 +27,9 @@
                             <tree string="Tasks" editable="bottom"
                                   colors="blue:state== 'draft';green:state== 'affect';purple:state== 'tovalid'">
                                 <field name="work_id" readonly="0"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+
                                        string="Taches"/>
+                                <field name="project_id" readonly="0" string="Projet" widget="selection"/>
                                 <field name="note" readonly="0"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                        string="T.S"/>
@@ -60,7 +61,7 @@
                                     <field name="actions" string="Actions" required="1"/>
                                     <field name="categ_id" string="Département"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                                           required="1"/>
+                                           required="0"/>
                                     <field name="done" string="Taches de Corrections?"
                                            help="Coché pour les taches de controles"/>
                                     <field name="zone" string="Zone?" help="Ignoré si =0"/>
@@ -136,48 +137,36 @@
                         </page>
                     </notebook>
 
-                    <group string="Taches A  Valider">
+                    <group string="Taches A Valider">
                         <button name="button_save_" type="object" string="Charger les Taches" class="oe_highlight"
                                 confirm="Charger les Taches à activer?" states='draft' invisible="1"/>
                         <newline/>
-
 
                         <field name="work_ids" nolabel="1">
                             <tree string="Taches" editable="bottom"
                                   colors="blue:state== 'draft';green:state== 'affect';purple:state== 'tovalid'"
                                   readonly="0">
-
-
-                                <field name="project_id" invisible="context.get('user_invisible', False)" readonly="0"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                                       string="Projet"/>
-
-                                <field name="task_id" invisible="context.get('user_invisible', False)" readonly="0"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                                       string="Taches"/>
-                                <field name="name" string="Nom Travaux" readonly="0"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                                <field name="project_id" readonly="0" string="Projet" />
+                                <field name="work_id" string="Work" widget="many2one" options="{'no_create': True}"/>
+                                <field name="name" string="Nom Travaux" readonly="0"/>
                                 <field name="kit_id" string="Kit"/>
-                                <field name="date_start" string="Date Début" widget="date"
-                                />
-                                <field name="date_end" string="Date Fin" widget="date"
-                                />
-
-                                <field name="uom_id" string="Unité" sum="Total"
+                                <field name="date_start" string="Date Début" widget="date"/>
+                                <field name="date_end" string="Date Fin" widget="date"/>
+                                <field name="work_id" string="work" widget="selection"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
-
-                                <field name="poteau_t" string="Qté/Unité" sum="Total"
-                                />
-
+                                <field name="uom_id" string="Unité" sum="Total" widget="selection"
+                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                                <field name="poteau_t" string="Qté/Unité" sum="Total"/>
+                                <field name="categ_id" widget="selection"
+                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                                       onchange="onchange_project_id()"/>
                                 <field name="gest_id" string="Superviseur" widget="selection" readonly="0"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
-
-
                                 <field name="state" string="Statut" readonly="0"/>
-
                             </tree>
                         </field>
                     </group>
+
 
                 </sheet>
             </form>

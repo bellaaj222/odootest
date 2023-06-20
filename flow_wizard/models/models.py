@@ -190,16 +190,75 @@ class EbMergeflows(models.Model):
     kit = fields.Char(string='Kit')
     kit_id = fields.Char(string='Kit_id')
 
-    # @api.onchange('actions')
-    # def onchange_actions(self):
-    #     active = self.env.context.get('active_ids', [])
-    #     if self.actions == 'permis' or self.actions == 'archiv' or self.actions == 'treated':
-    #         for line in active:
-    #             work = self.env['project.task.work'].browse(line)
-    #             if work.state == 'affect_con' or work.state == 'affect_corr' or work.state == 'affect':
-    #                 message = {'title': _('Attention'), 'message': _("Attention la tache: %s est en cours") % work.name}
-    #                 return {'warning': message}
-    #     return {}
+    @api.onchange('actions')
+    def onchange_actions(self):
+        active = self.env.context.get('active_ids', [])
+        if self.actions == 'permis' or self.actions == 'archiv' or self.actions == 'treated':
+            for line in active:
+                work = self.env['project.task.work'].browse(line)
+                if work.state == 'affect_con' or work.state == 'affect_corr' or work.state == 'affect':
+                    message = {'title': _('Attention'), 'message': _("Attention la tache: %s est en cours") % work.name}
+                    return {'warning': message}
+        return {}
+
+    @api.onchange('project_id', 'categ_id', 'zone', 'secteur', 'work_ids')
+    def onchange_project_id(self):
+        ids = []
+        ltask2 = []
+        tt = self.env['project.task.work'].search([], order='sequence asc')
+        task_ = self.env['project.task']
+        task_work = self.env['project.task.work']
+
+        print("tt:", tt)
+        print("task_:", task_)
+        print("task_work:", task_work)
+
+        if self.project_id.is_kit:
+            if self.zone < 99 and self.secteur < 99 and self.categ_id and self.project_id:
+                print("Executing query with kit_id, zone, secteur")
+                self.env.cr.execute(
+                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s AND secteur=%s ORDER BY kit_id, zone, secteur',
+                    (self.project_id.id, self.categ_id.id, self.zone, self.secteur))
+                ltask2 = self.env.cr.fetchall()
+            elif self.zone < 99 and self.categ_id and self.project_id:
+                print("Executing query with kit_id, zone")
+                self.env.cr.execute(
+                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s ORDER BY kit_id, zone, secteur',
+                    (self.project_id.id, self.categ_id.id, self.zone))
+                ltask2 = self.env.cr.fetchall()
+            elif self.categ_id and self.project_id:
+                print("Executing query with kit_id")
+                self.env.cr.execute(
+                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s ORDER BY kit_id, zone, secteur',
+                    (self.project_id.id, self.categ_id.id))
+                ltask2 = self.env.cr.fetchall()
+        else:
+            if self.zone < 99 and self.secteur < 99 and self.categ_id and self.project_id:
+                print("Executing query without kit_id, zone, secteur")
+                self.env.cr.execute(
+                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s AND secteur=%s',
+                    (self.project_id.id, self.categ_id.id, self.zone, self.secteur))
+                ltask2 = self.env.cr.fetchall()
+            elif self.zone < 99 and self.categ_id and self.project_id:
+                print("Executing query without kit_id, zone")
+                self.env.cr.execute(
+                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s',
+                    (self.project_id.id, self.categ_id.id, self.zone))
+                ltask2 = self.env.cr.fetchall()
+            elif self.categ_id and self.project_id:
+                print("Executing query without kit_id")
+                self.env.cr.execute(
+                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s',
+                    (self.project_id.id, self.categ_id.id))
+                ltask2 = self.env.cr.fetchall()
+
+        print("ltask2:", ltask2)
+
+        self.work_ids = ltask2
+
+        print("work_ids:", self.work_ids)
+
+        return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
 
     def button_cancel(self):
 
@@ -227,94 +286,212 @@ class EbMergeflows(models.Model):
             'domain': []
         }
 
-    def button_approve(self):
+    def button_approve(self, product_id=None):
         line_obj = self.pool.get('base.flow.merge.automatic.wizard')
         line_obj1 = self.pool.get('base.flow.merge.line')
         work_line = self.pool.get('project.task.work')
         wl = self.pool.get('project.task.work.line')
-        task_line = self.pool.get('base.flow.merge.line')
+        task_line = self.env['base.flow.merge.line']
         task_obj = self.pool.get('project.task')
         emp_obj = self.pool.get('hr.employee')
+        product = self.env['product.product'].browse(product_id)
+
         tt = []
         # if self.env.cr.dbname == 'TEST95':
         #     connection = py.connect(host='localhost', user='root', passwd='', db='rukovoditel_en', use_unicode=True,
         #                             charset="utf8")
         #     cursor = connection.cursor()
+        this = self.browse(self.ids)
 
         if not self.actions:
             raise UserError(_('Vous devez obligatoirement sélectionner une action!'))
 
-        for line in self.line_ids:
-            l1 = line.work_id
-            if self.actions == 'keep':
+        if self.actions == 'keep':
+            for line in self.line_ids.ids:
+                l1 = task_line.browse(line)
                 if self.project_id.is_kit:
                     self.env.cr.execute(
-                        'UPDATE project_task_work SET active = %s, display = %s WHERE kit_id = %s AND project_id = %s AND zone = %s AND secteur = %s',
-                        (True, True, l1.kit_id.id, self.project_id.id, l1.zone, l1.secteur))
+                        'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
+                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                    self.env.cr.execute(
+                        'UPDATE project_task_work SET display=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
+                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                 else:
-                    self.env.cr.execute('UPDATE project_task_work SET active = %s, display = %s WHERE id = %s',
-                                        (True, True, l1.id))
 
-            elif self.actions == 'suspend':
+                    self.env.cr.execute('UPDATE project_task_work SET active=%s WHERE id=%s ',
+                                        (True, l1.work_id.id))
+                    self.env.cr.execute('UPDATE project_task_work SET display=%s WHERE id=%s ',
+                                        (True, l1.work_id.id))
+
+                res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
+                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                self.env['work.histo.line'].create({
+                    'actions': 'keep',
+                    'type': 'aw',
+                    'create_by': res_user.employee_id.name,
+                    'work_histo_id': wk_histo_id,
+                    'date': datetime.now(),
+                    'coment1': self.note or False,
+                    'id_object': self.id,
+                })
+
+        if self.actions == 'suspend':
+            for line in this.line_ids.ids:
+                l1 = task_line.browse(line)
                 if self.project_id.is_kit:
                     self.env.cr.execute(
-                        'UPDATE project_task_work SET state = %s WHERE task_id = %s AND zone = %s AND secteur = %s AND project_id = %s AND kit_id',
-                        ('pending', l1.task_id.id, l1.zone, l1.secteur, self.project_id.id, l1.kit_id))
+                        'UPDATE project_task_work SET state=%s WHERE task_id=%s AND zone=%s AND secteur=%s AND project_id=%s AND kit_id=%s',
+                        ('pending', l1.work_id.task_id.id, l1.work_id.zone, l1.work_id.secteur, this.project_id.id,
+                         l1.work_id.kit_id)
+                    )
                 else:
-                    self.env.cr.execute(
-                        'UPDATE project_task_work SET state = %s WHERE task_id = %s AND zone = %s AND secteur = %s',
-                        ('pending', l1.task_id.id, l1.zone, l1.secteur))
+                    self.env.cr.execute('UPDATE project_task_work SET state=%s WHERE task_id=%s',
+                                        ('pending', l1.work_id.task_id.id))
 
-            elif self.actions == 'permis':
-                if self.project_id.is_kit:
-                    self.env.cr.execute(
-                        'UPDATE project_task_work SET state = %s WHERE kit_id = %s AND project_id = %s AND zone = %s AND secteur = %s',
-                        ('valid', l1.kit_id.id, self.project_id.id, l1.zone, l1.secteur))
+                res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
+                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                self.env['work.histo.line'].create({
+                    'actions': 'suspend',
+                    'type': 'aw',
+                    'create_by': res_user.employee_id.name,
+                    'work_histo_id': wk_histo_id,
+                    'date': datetime.now(),
+                    'coment1': this.note or False,
+                    'id_object': self.id,
+                })
+
+        if self.actions == 'archiv':
+            for line in this.line_ids.ids:
+                l1 = task_line.browse(line)
+                if l1.work_id:  # Vérifier si work_id est non nul
+                    if this.project_id.is_kit is True:
+                        self.env.cr.execute(
+                            'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
+                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                    else:
+                        print("archiv")
+                        self.env.cr.execute('UPDATE project_task_work SET active=%s WHERE id=%s',
+                                            (False, l1.work_id.id))
                 else:
-                    print('Executing SQL query: UPDATE project_task_work SET state = %s WHERE id = %s' % (
-                        'valid', int(l1.id)))
+                    print("work_id is empty or null")
 
-                    self.env.cr.execute('UPDATE project_task_work SET state = %s WHERE id = %s', ('valid', int(l1.id)))
-                if self.env.cr.dbname == 'TEST95':
-                    sql1 = ("update app_entity_26 set field_244='75' WHERE id = %s")
-                    self.env.cr.execute(sql1, (l1.work_id.id,))
-                    # connection.commit()
+                res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
+                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                self.env['work.histo.line'].create({
+                    'actions': 'archiv',
+                    'type': 'aw',
+                    'execute_by': this.employee_id.name or False,
+                    'create_by': res_user.employee_id.name,
+                    'work_histo_id': wk_histo_id,
+                    'date': datetime.now(),
+                    'coment1': this.note or False,
+                    'id_object': self.id,
+                })
 
-                for kk in l1.work_id.line_ids:
+                for kk in l1.work_id.line_ids.ids:
                     rec_line = self.env['project.task.work.line'].browse(kk)
                     if rec_line.group_id2:
                         if rec_line.group_id2.ids not in tt:
                             tt.append(rec_line.group_id2.ids)
 
-            elif self.actions == 'archiv':
-                if self.project_id.is_kit:
-                    self.env.cr.execute(
-                        'UPDATE project_task_work SET active = %s WHERE kit_id = %s AND project_id = %s AND zone = %s AND secteur = %s',
-                        (False, l1.kit_id.id, self.project_id.id, l1.zone, l1.secteur))
+            if this.actions == 'treated':
+                for line in this.line_ids.ids:
+                    l1 = task_line.browse(line)
+                    if this.project_id.is_kit is True:
+                        self.env.cr.execute(
+                            'update project_task_work set  state=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
+                            (
+                                'valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone,
+                                l1.work_id.secteur))
+                        self.env.cr.execute(
+                            'update project_task_work set  active=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
+                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                    else:
+                        self.env.cr.execute('update project_task_work set  state=%s where  id=%s ',
+                                            ('valid', l1.work_id.id))
+                        self.env.cr.execute('update project_task_work set  active=%s where  id=%s ',
+                                            (False, l1.work_id.id))
+
+                    res_user = self.env['res.users'].browse(self.env.uid)
+                    wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
+                    wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                    self.env['work.histo.line'].create({
+                        'actions': 'treated',
+                        'type': 'aw',
+                        'execute_by': this.employee_id.name or False,
+                        'create_by': res_user.employee_id.name,
+                        'work_histo_id': wk_histo_id,
+                        'date': datetime.now(),
+                        'coment1': this.note or False,
+                        'id_object': self.id,
+                    }),
+
+                    for kk in l1.work_id.line_ids.ids:
+                        rec_line = self.env['project.task.work.line'].browse(kk)
+                        if rec_line.group_id2:
+                            if rec_line.group_id2.ids not in tt:
+                                tt.append(rec_line.group_id2.ids)
+            if this.date_start_r:
+                for line in this.work_ids:
+                    l1 = self.env['project.task.work'].browse(line.id)
+                    l1.write({'date_start': this.date_start_r})
+
+            if this.date_end_r:
+                for line in this.work_ids:
+                    l1 = self.env['project.task.work'].browse(line.id)
+                    l1.write({'date_end': this.date_end_r})
+
+            if this.poteau_r:
+                for line in this.work_ids:
+                    l1 = self.env['project.task.work'].browse(line.id)
+                    l1.write({'poteau_t': this.poteau_r})
+
+            vals = this.time_ch.split(':')
+            if len(vals) >= 2:
+                hours = float(vals[0])
+                minutes = float(vals[1])
+                t, hours = divmod(hours, 24)
+                t, minutes = divmod(minutes, 60)
+                minutes = minutes / 60.0
+                total = hours + minutes
+            else:
+                print("Invalid time format: expected hh:mm")
+
+            res_user = self.env['res.users'].browse(self.env.uid)
+            for rec in this.line_ids[0]:
+                vals = {
+                    'create_date': fields.Date.today(),
+                    'date_start_r': fields.Date.today(),
+                    'project_id': rec.work_id.project_id.id,
+                    'zo': rec.work_id.zone,
+                    'sect': rec.work_id.secteur,
+                    'gest_id': rec.work_id.gest_id.id,
+                    'state': 'valid',
+                    'active': True,
+                    'name': 'gestion affectation',
+                }
+                base_group = self.env['base.group.merge.automatic.wizard'].create(vals)
+                base_group_id = base_group.id
+
+                if rec.work_id.categ_id.id == 3:
+                    print("dep1")
+                    product = 156
+                elif rec.work_id.categ_id.id == 1:
+                    print("dep1")
+                    product = 80
+                elif rec.work_id.categ_id.id == 4:
+                    print("dep1")
+                    product = 218
+                elif rec.work_id.categ_id.id == 6:
+                    print("dep6")
+                    product = 174
                 else:
-                    self.env.cr.execute('UPDATE project_task_work SET active = %s WHERE id = %s', (False, l1.id))
+                    print("Aucune condition n'a été satisfaite.")
 
-                if self.env.cr.dbname == 'TEST95':
-                    sql1 = ("update app_entity_26 set field_276=False WHERE id = %s")
-                    self.env.cr.execute(sql1, (l1.work_id.id,))
-                    # connection.commit()
-
-        res_user = self.env['res.users'].browse(self._uid)
-        for line in self.line_ids:
-            l1 = line.work_id
-            wk_histo = self.env['work.histo'].search([('work_id', '=', l1.id)])
-            wk_histo_id = self.env['work.histo'].browse(wk_histo).id
-
-            self.env['work.histo.line'].create({
-                'actions': self.actions,
-                'type': 'aw',
-                'execute_by': self.employee_id.name or False,
-                'create_by': res_user.employee_id.name,
-                'work_histo_id': wk_histo_id,
-                'date': fields.Datetime.now(),
-                'coment1': self.note or False,
-                'id_object': self.id,
-            })
+                print("Valeur de product :", product)
 
     def button_affect(self):
         work_obj = self.env['base.flow.merge.automatic.wizard']
@@ -478,7 +655,7 @@ class ProjectTaskWork(models.Model):
     _description = 'Task Work'
     name = fields.Char(string='Name')
     kit = fields.Char(string='Kit')
-    project_id = fields.Many2one('project.project', string='Wizard')
+    project_id = fields.Many2one('project.project', string='Project_id')
     task_id = fields.Many2one('project.task', string='Wizard')
     kit_id = fields.Char(string='Kit')
     date_start = fields.Date('Date')
@@ -505,17 +682,26 @@ class ProjectTaskWork(models.Model):
     ],
         'Status', copy=False)
 
-    work_id = fields.Many2one('project.task.work', string='Work')
+    work_id = fields.Many2one('project.task.work', string='Work_id')
     active = fields.Boolean(string='Is doctor?')
     line_ids = fields.One2many(
         'base.flow.merge.line', 'wizard_id', string=u"Role lines", copy=True,
         states={'draft': [('readonly', False)]}, )
+    sequence = fields.Integer(string='sequence')
+    zone = fields.Integer('Color Index')
+
+    secteur = fields.Integer('Color Index')
+
+    categ_id = fields.Many2one('product.category', string='categ_id',
+                               )
 
 
 class ProjectTaskWorkLine(models.Model):
     _name = 'project.task.work.line'
     _description = 'Project Task Work Line'
     name = fields.Char(string='Name')
+    group_id2 = fields.Many2one('base.group', 'Done by', select="1", readonly=True,
+                                states={'affect': [('readonly', False)]}, )
 
 
 class ProductUom(models.Model):
@@ -589,4 +775,36 @@ class BaseInvoicesMergeAutomaticWizardProjectTaskWorkRel(models.Model):
     # Add other fields as needed
 
     name = fields.Char(string='Field Label')
+    name = fields.Char(string='Field Label')
 
+
+class ProductCategory(models.Model):
+    _inherit = 'product.category'
+    _description = "Product Category"
+
+    name = fields.Char(string='Name', required=True, translate=True, select=True)
+    categ_id = fields.Many2one('product.category', string='Wizard')
+
+
+class BaseGroupMergeAutomaticWizard(models.Model):
+    _name = 'base.group.merge.automatic.wizard'
+    _description = 'Automatic Group Merge Wizard'
+
+    create_date = fields.Date(string='Create Date', default=fields.Date.today())
+    date_start_r = fields.Date(string='Date Start R', default=fields.Date.today())
+    project_id = fields.Many2one('project.project', string='Project')
+    zo = fields.Char(string='Zone')
+    sect = fields.Char(string='Secteur')
+    gest_id = fields.Many2one('res.partner', string='Gest')
+    state = fields.Selection([
+        ('draft', 'Draft'),
+        ('valid', 'Validated'),
+        ('cancel', 'Cancelled')
+    ], string='State', default='draft')
+    active = fields.Boolean(string='Active', default=True)
+    name = fields.Char(string='Name')
+
+
+class BaseGroup(models.Model):
+    _name = "base.group"
+    name = fields.Char('Name')

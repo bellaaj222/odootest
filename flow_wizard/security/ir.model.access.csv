@@ -11,5 +11,5 @@ access.base.invoices.merge.automatic.wizard,access_base_invoices_merge_automatic
 access.base.invoices.merge.automatic.wizard.project.task.work.rel,access_base_invoices_merge_automatic_wizard_project_task_work_rel
 ,flow_wizard.model_base_invoices_merge_automatic_wizard_project_task_work_rel
 ,base.group_user,1,1,1,1
-
-
+access.base.group.merge.automatic.wizard,access_base_group_merge_automatic_wizard,flow_wizard.model_base_group_merge_automatic_wizard,base.group_user,1,1,1,1
+access.base.group,access_base_group,flow_wizard.model_base_group,base.group_user,1,1,1,1
