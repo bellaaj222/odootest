@@ -26,7 +26,7 @@
                         <field name="line_ids" string="Taches Sources" sum="Total" readonly="0" nolabel="1">
                             <tree string="Tasks" editable="bottom"
                                   colors="blue:state== 'draft';green:state== 'affect';purple:state== 'tovalid'">
-                                <field name="work_id" readonly="0"
+                                <field name="work_id" readonly="0" widget="selection"
 
                                        string="Taches"/>
                                 <field name="project_id" readonly="0" string="Projet" widget="selection"/>

@@ -67,34 +67,30 @@ class EbMergeflows(models.Model):
 
     @api.model
     def default_get(self, fields):
-        print("default_get")
 
         res = super(EbMergeflows, self).default_get(fields)
         active_ids = self.env.context.get('active_ids')
 
         for task in active_ids:
-            work = self.env['project.task.work'].browse(task)
+            work = self.env['project.task.' \
+                            'work'].browse(task)
             context = self._context
             current_uid = context.get('uid')
             res_user = self.env['res.users'].browse(current_uid)
-            categ_ids = self.env['hr.academic'].search([('employee_id', '=', res_user.employee_id.id)])
+            categ_ids = self.env['hr.academic'].search([])
+            # ('employee_id', '=', res_user.employee_id.id
+            print(categ_ids.ids)
             jj = []
             if self.env.context.get('active_model') == 'project.task.work' and active_ids:
+
                 if categ_ids:
+                    print("test1")
                     for ll in categ_ids.ids:
                         dep = self.env['hr.academic'].browse(ll)
                         jj.append(dep.categ_id.id)
                 if work.categ_id.id not in jj:
-                    raise UserError(_('Action impossible!'))
+                    raise UserError(_('Action impossible1!'))
         if self.env.context.get('active_model') == 'project.task.work' and active_ids:
-            print("2")
-            ## res['work_ids'] = active_ids
-            ##wiz_id=self.env['base.flow.merge.automatic.wizard'].create({'work_ids': active_ids}) 'wizard_id': wiz_id,
-            ##res.update({})
-            r = []
-            pref = ''
-            test = ''
-            list = []
             state = 'draft'
             l = []
             l1 = []
@@ -104,15 +100,15 @@ class EbMergeflows(models.Model):
                 if work.project_id.id not in l:
                     l.append(work.project_id.id)
                 if len(l) > 1:
-                    raise UserError(_('Action impossible!'), _("Action possible pour un seul projet  !"))
+                    raise UserError(_('Action impossible!2'), _("Action possible pour un seul projet  !"))
                 if work.zone not in l1:
                     l1.append(work.zone)
                 if len(l1) > 1:
-                    raise UserError(_('Action impossible!'), _("Action possible pour une seule zone  !"))
+                    raise UserError(_('Action impossible!3'), _("Action possible pour une seule zone  !"))
                 if work.secteur not in l2:
                     l2.append(work.secteur)
                 if len(l2) > 1:
-                    raise UserError(_('Action impossible!'), _("Action possible pour un seul secteur  !"))
+                    raise UserError(_('Action impossible!4'), _("Action possible pour un seul secteur  !"))
                 r = []
                 for task_id in active_ids:
                     work = self.env['project.task.work'].browse(task_id)
@@ -151,15 +147,19 @@ class EbMergeflows(models.Model):
                 if work.project_id.id not in l:
                     l.append(work.project_id.id)
                 if len(l) > 1:
-                    raise UserError(_('Action impossible!'), _("Action possible pour un seul projet  !"))
+                    print("impo1")
+                    raise UserError(_('Action impossible!4'), _("Action possible pour un seul projet  !"))
                 if work.zone not in l1:
+                    print("impo2")
                     l1.append(work.zone)
                 if len(l1) > 1:
-                    raise UserError(_('Action impossible!'), _("Action possible pour une seule zone  !"))
+                    print("impo3")
+                    raise UserError(_('Action impossible!5'), _("Action possible pour une seule zone  !"))
                 if work.secteur not in l2:
                     l2.append(work.secteur)
                 if len(l2) > 1:
-                    raise UserError(_('Action impossible!'), _("Action possible pour un seul secteur  !"))
+                    print("impo4")
+                    raise UserError(_('Action impossible!6'), _("Action possible pour un seul secteur  !"))
                 r.append((0, 0, {'work_id': work.id, 'date_start_r': work.date_start, 'date_end_r': work.date_end,
                                  'color1': work.color, 'uom_id_r': work.uom_id.id, 'poteau_t': work.poteau_t,
                                  'gest_id': work.gest_id.id, 'state': work.state
@@ -167,7 +167,6 @@ class EbMergeflows(models.Model):
             res.update({'line_ids': r, 'project_id': work.project_id.id, 'zo': work.zo, 'sect': work.sect})
 
         ##
-        ##                test=test+pref+str(work.project_id.name) +' - '+str(work.task_id.sequence)+' - '+str(work.sequence)
 
         return res
 
@@ -282,7 +281,7 @@ class EbMergeflows(models.Model):
     amount_total = fields.Float(compute='_amount_all', string='amount_total')
     amount_tvq = fields.Float(compute='_amount_all', string='amount_tvq')
     amount_tps = fields.Float(compute='_amount_all', string='amount_tps')
-    categ_id = fields.Many2one('product.category', string='Wizard', readonly=True,
+    categ_id = fields.Many2one('product.category', string='Wizard', readonly=False,
                                states={'draft': [('readonly', False)]}, )
     employee_ids = fields.Many2many('hr.employee', 'base_flow_merge_automatic_wizard_hr_employee_rel',
                                     'base_flow_merge_automatic_wizard_id', 'hr_employee_id', string='Legumes',
@@ -307,67 +306,64 @@ class EbMergeflows(models.Model):
                     return {'warning': message}
         return {}
 
-    @api.onchange('project_id', 'categ_id', 'zone', 'secteur', 'work_ids')
-    def onchange_project_id(self):
-        ids = []
+    @api.onchange('categ_id', 'project_id')
+    def onchange_categ_project(self):
         ltask2 = []
-        tt = self.env['project.task.work'].search([], order='sequence asc')
-        task_ = self.env['project.task']
-        task_work = self.env['project.task.work']
 
-        print("tt:", tt)
-        print("task_:", task_)
-        print("task_work:", task_work)
-
-        if self.project_id.is_kit:
-            if self.zone < 99 and self.secteur < 99 and self.categ_id and self.project_id:
-                print("Executing query with kit_id, zone, secteur")
-                self.env.cr.execute(
-                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s AND secteur=%s ORDER BY kit_id, zone, secteur',
-                    (self.project_id.id, self.categ_id.id, self.zone, self.secteur))
-                ltask2 = self.env.cr.fetchall()
-            elif self.zone < 99 and self.categ_id and self.project_id:
-                print("Executing query with kit_id, zone")
-                self.env.cr.execute(
-                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s ORDER BY kit_id, zone, secteur',
-                    (self.project_id.id, self.categ_id.id, self.zone))
-                ltask2 = self.env.cr.fetchall()
-            elif self.categ_id and self.project_id:
-                print("Executing query with kit_id")
-                self.env.cr.execute(
-                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s ORDER BY kit_id, zone, secteur',
-                    (self.project_id.id, self.categ_id.id))
-                ltask2 = self.env.cr.fetchall()
-        else:
-            if self.zone < 99 and self.secteur < 99 and self.categ_id and self.project_id:
-                print("Executing query without kit_id, zone, secteur")
-                self.env.cr.execute(
-                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s AND secteur=%s',
-                    (self.project_id.id, self.categ_id.id, self.zone, self.secteur))
-                ltask2 = self.env.cr.fetchall()
-            elif self.zone < 99 and self.categ_id and self.project_id:
-                print("Executing query without kit_id, zone")
-                self.env.cr.execute(
-                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s',
-                    (self.project_id.id, self.categ_id.id, self.zone))
-                ltask2 = self.env.cr.fetchall()
-            elif self.categ_id and self.project_id:
-                print("Executing query without kit_id")
-                self.env.cr.execute(
-                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s',
-                    (self.project_id.id, self.categ_id.id))
-                ltask2 = self.env.cr.fetchall()
+        if self.categ_id and self.project_id:
+            print("Executing query with categ_id and project_id")
+            self.env.cr.execute(
+                'SELECT id FROM project_task_work WHERE categ_id=%s AND project_id=%s',
+                (self.categ_id.id, self.project_id.id))
+            ltask2 = [result[0] for result in self.env.cr.fetchall()]
 
         print("ltask2:", ltask2)
 
-        self.work_ids = ltask2
+        self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
+
+        print("work_ids:", self.work_ids)
+
+        return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
+
+    @api.onchange('secteur')
+    def onchange_secteur(self):
+        ltask2 = []
+
+        if self.secteur:
+            print("Executing query with secteur")
+            self.env.cr.execute(
+                'SELECT id FROM project_task_work WHERE secteur=%s',
+                (self.secteur,))
+            ltask2 = [result[0] for result in self.env.cr.fetchall()]
+
+        print("ltask2:", ltask2)
+
+        self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
+
+        print("work_ids:", self.work_ids)
+
+        return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
+
+    @api.onchange('zone', 'secteur')
+    def onchange_zone_secteur(self):
+        ltask2 = []
+
+        if self.zone and self.secteur:
+            print("Executing query with zone and secteur")
+            self.env.cr.execute(
+                'SELECT id FROM project_task_work WHERE zone=%s AND secteur=%s',
+                (self.zone, self.secteur))
+            ltask2 = [result[0] for result in self.env.cr.fetchall()]
+
+        print("ltask2:", ltask2)
+
+        self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
 
         print("work_ids:", self.work_ids)
 
         return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
 
     def button_cancel(self):
-
         work_obj = self.env['project.task.work']
         line_obj = self.env['base.flow.merge.automatic.wizard']
         line_obj1 = self.env['base.flow.merge.line']
@@ -393,6 +389,7 @@ class EbMergeflows(models.Model):
         }
 
     def button_approve(self, product_id=None):
+        print("approve")
         line_obj = self.pool.get('base.flow.merge.automatic.wizard')
         line_obj1 = self.pool.get('base.flow.merge.line')
         work_line = self.pool.get('project.task.work')
@@ -413,15 +410,16 @@ class EbMergeflows(models.Model):
             raise UserError(_('Vous devez obligatoirement sélectionner une action!'))
 
         if self.actions == 'keep':
+            print("keep")
             for line in self.line_ids.ids:
                 l1 = task_line.browse(line)
                 if self.project_id.is_kit:
                     self.env.cr.execute(
                         'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                        (True, l1.work_id.kit_id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                     self.env.cr.execute(
                         'UPDATE project_task_work SET display=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                        (True, l1.work_id.kit_id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                 else:
 
                     self.env.cr.execute('UPDATE project_task_work SET active=%s WHERE id=%s ',
@@ -443,9 +441,12 @@ class EbMergeflows(models.Model):
                 })
 
         if self.actions == 'suspend':
+
             for line in this.line_ids.ids:
+
                 l1 = task_line.browse(line)
                 if self.project_id.is_kit:
+                    print("suspend1")
                     self.env.cr.execute(
                         'UPDATE project_task_work SET state=%s WHERE task_id=%s AND zone=%s AND secteur=%s AND project_id=%s AND kit_id=%s',
                         ('pending', l1.work_id.task_id.id, l1.work_id.zone, l1.work_id.secteur, this.project_id.id,
@@ -469,13 +470,15 @@ class EbMergeflows(models.Model):
                 })
 
         if self.actions == 'archiv':
+            print("archiv")
             for line in this.line_ids.ids:
                 l1 = task_line.browse(line)
                 if l1.work_id:  # Vérifier si work_id est non nul
                     if this.project_id.is_kit is True:
                         self.env.cr.execute(
                             'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                            (False, l1.work_id.kit_id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                        # removed .id from kit_id
                     else:
                         print("archiv")
                         self.env.cr.execute('UPDATE project_task_work SET active=%s WHERE id=%s',
@@ -507,14 +510,15 @@ class EbMergeflows(models.Model):
                 for line in this.line_ids.ids:
                     l1 = task_line.browse(line)
                     if this.project_id.is_kit is True:
+                        print("traeted")
                         self.env.cr.execute(
                             'update project_task_work set  state=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
                             (
-                                'valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone,
+                                'valid', l1.work_id.kit_id, this.project_id.id, l1.work_id.zone,
                                 l1.work_id.secteur))
                         self.env.cr.execute(
                             'update project_task_work set  active=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
-                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                            (False, l1.work_id.kit_id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                     else:
                         self.env.cr.execute('update project_task_work set  state=%s where  id=%s ',
                                             ('valid', l1.work_id.id))
@@ -803,6 +807,9 @@ class ProjectTaskWork(models.Model):
     color = fields.Integer(string='Nbdays')
     zo = fields.Char(string='Zone')
     sect = fields.Char(string='Secteur', readonly=True, states={'draft': [('readonly', False)]}, )
+    gest_id3 = fields.Many2one('hr.employee', string='Coordinateur 3', copy=True, readonly=True,
+                               states={'draft': [('readonly', False)]}, )
+    display = fields.Boolean(string='Réalisable')
 
     def action_open(self):
         current = self.ids[0]
