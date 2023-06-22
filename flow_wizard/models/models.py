@@ -81,15 +81,15 @@ class EbMergeflows(models.Model):
             # ('employee_id', '=', res_user.employee_id.id
             print(categ_ids.ids)
             jj = []
-            if self.env.context.get('active_model') == 'project.task.work' and active_ids:
-
-                if categ_ids:
-                    print("test1")
-                    for ll in categ_ids.ids:
-                        dep = self.env['hr.academic'].browse(ll)
-                        jj.append(dep.categ_id.id)
-                if work.categ_id.id not in jj:
-                    raise UserError(_('Action impossible1!'))
+            # if self.env.context.get('active_model') == 'project.task.work' and active_ids:
+            #
+            #     if categ_ids:
+            #         print("test1")
+            #         for ll in categ_ids.ids:
+            #             dep = self.env['hr.academic'].browse(ll)
+            #             jj.append(dep.categ_id.id)
+            #     if work.categ_id.id not in jj:
+            #         raise UserError(_('Action impossible1!'))
         if self.env.context.get('active_model') == 'project.task.work' and active_ids:
             state = 'draft'
             l = []
@@ -292,8 +292,8 @@ class EbMergeflows(models.Model):
     employee_ids2 = fields.Many2many('hr.employee', 'base_flow_merge_automatic_wizard_hr_employee_rel2',
                                      'base_flow_merge_automatic_wizard_id', 'hr_employee_id', string='Legumes',
                                      readonly=True, states={'draft': [('readonly', False)]}, )
-    kit = fields.Char(string='Kit')
-    kit_id = fields.Char(string='Kit_id')
+    kit_id = fields.Many2one('product.kit', string='Nom Kit', ondelete='cascade', select="1",
+                             readonly=True, states={'draft': [('readonly', False)]}, )
 
     @api.onchange('actions')
     def onchange_actions(self):
@@ -306,58 +306,63 @@ class EbMergeflows(models.Model):
                     return {'warning': message}
         return {}
 
-    @api.onchange('categ_id', 'project_id')
-    def onchange_categ_project(self):
+    @api.onchange('project_id', 'categ_id', 'zone', 'secteur', 'work_ids')
+    def onchange_project_id(self):
+        ids = []
         ltask2 = []
+        tt = self.env['project.task.work'].search([], order='sequence asc')
+        task_ = self.env['project.task']
+        task_work = self.env['project.task.work']
 
-        if self.categ_id and self.project_id:
-            print("Executing query with categ_id and project_id")
-            self.env.cr.execute(
-                'SELECT id FROM project_task_work WHERE categ_id=%s AND project_id=%s',
-                (self.categ_id.id, self.project_id.id))
-            ltask2 = [result[0] for result in self.env.cr.fetchall()]
+        print("tt:", tt)
+        print("task_:", task_)
+        print("task_work:", task_work)
+
+        if self.project_id.is_kit:
+            if self.zone < 99 and self.secteur < 99 and self.categ_id and self.project_id:
+                print("Executing query with kit_id, zone, secteur")
+                self.env.cr.execute(
+                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s AND secteur=%s ORDER BY kit_id, zone, secteur',
+                    (self.project_id.id, self.categ_id.id, self.zone, self.secteur))
+                ltask2 = [result[0] for result in self.env.cr.fetchall()]
+            elif self.zone < 99 and self.categ_id and self.project_id:
+                print("Executing query with kit_id, zone")
+                self.env.cr.execute(
+                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s ORDER BY kit_id, zone, secteur',
+                    (self.project_id.id, self.categ_id.id, self.zone))
+                ltask2 = [result[0] for result in self.env.cr.fetchall()]
+            elif self.categ_id and self.project_id:
+                print("Executing query with kit_id1")
+                self.env.cr.execute(
+                    'SELECT DISTINCT ON (kit_id, zone, secteur) id FROM project_task_work WHERE project_id=%s AND categ_id=%s ORDER BY kit_id, zone, secteur',
+                    (self.project_id.id, self.categ_id.id))
+                ltask2 = [result[0] for result in self.env.cr.fetchall()]
+        else:
+            if self.zone < 99 and self.secteur < 99 and self.categ_id and self.project_id:
+                print("Executing query without kit_id, zone, secteur")
+                self.env.cr.execute(
+                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s AND secteur=%s',
+                    (self.project_id.id, self.categ_id.id, self.zone, self.secteur))
+                ltask2 = [result[0] for result in self.env.cr.fetchall()]
+            elif self.zone < 99 and self.categ_id and self.project_id:
+                print("Executing query without kit_id, zone")
+                self.env.cr.execute(
+                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s AND zone=%s',
+                    (self.project_id.id, self.categ_id.id, self.zone))
+                ltask2 = [result[0] for result in self.env.cr.fetchall()]
+            elif self.categ_id and self.project_id:
+                print("Executing query without kit_id")
+                self.env.cr.execute(
+                    'SELECT id FROM project_task_work WHERE project_id=%s AND categ_id=%s',
+                    (self.project_id.id, self.categ_id.id))
+                ltask2 = [result[0] for result in self.env.cr.fetchall()]
 
         print("ltask2:", ltask2)
 
-        self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
-
-        print("work_ids:", self.work_ids)
-
-        return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
-
-    @api.onchange('secteur')
-    def onchange_secteur(self):
-        ltask2 = []
-
-        if self.secteur:
-            print("Executing query with secteur")
-            self.env.cr.execute(
-                'SELECT id FROM project_task_work WHERE secteur=%s',
-                (self.secteur,))
-            ltask2 = [result[0] for result in self.env.cr.fetchall()]
-
-        print("ltask2:", ltask2)
-
-        self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
-
-        print("work_ids:", self.work_ids)
-
-        return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
-
-    @api.onchange('zone', 'secteur')
-    def onchange_zone_secteur(self):
-        ltask2 = []
-
-        if self.zone and self.secteur:
-            print("Executing query with zone and secteur")
-            self.env.cr.execute(
-                'SELECT id FROM project_task_work WHERE zone=%s AND secteur=%s',
-                (self.zone, self.secteur))
-            ltask2 = [result[0] for result in self.env.cr.fetchall()]
-
-        print("ltask2:", ltask2)
-
-        self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
+        if ltask2:
+            self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
+        else:
+            self.work_ids = False  # or any other appropriate value # Update work_ids using the 'many2many' format
 
         print("work_ids:", self.work_ids)
 
@@ -416,10 +421,10 @@ class EbMergeflows(models.Model):
                 if self.project_id.is_kit:
                     self.env.cr.execute(
                         'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                        (True, l1.work_id.kit_id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                     self.env.cr.execute(
                         'UPDATE project_task_work SET display=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                        (True, l1.work_id.kit_id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                 else:
 
                     self.env.cr.execute('UPDATE project_task_work SET active=%s WHERE id=%s ',
@@ -450,7 +455,7 @@ class EbMergeflows(models.Model):
                     self.env.cr.execute(
                         'UPDATE project_task_work SET state=%s WHERE task_id=%s AND zone=%s AND secteur=%s AND project_id=%s AND kit_id=%s',
                         ('pending', l1.work_id.task_id.id, l1.work_id.zone, l1.work_id.secteur, this.project_id.id,
-                         l1.work_id.kit_id)
+                         l1.work_id.kit_id.id)
                     )
                 else:
                     self.env.cr.execute('UPDATE project_task_work SET state=%s WHERE task_id=%s',
@@ -477,7 +482,7 @@ class EbMergeflows(models.Model):
                     if this.project_id.is_kit is True:
                         self.env.cr.execute(
                             'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                            (False, l1.work_id.kit_id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                         # removed .id from kit_id
                     else:
                         print("archiv")
@@ -514,11 +519,11 @@ class EbMergeflows(models.Model):
                         self.env.cr.execute(
                             'update project_task_work set  state=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
                             (
-                                'valid', l1.work_id.kit_id, this.project_id.id, l1.work_id.zone,
+                                'valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone,
                                 l1.work_id.secteur))
                         self.env.cr.execute(
                             'update project_task_work set  active=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
-                            (False, l1.work_id.kit_id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
                     else:
                         self.env.cr.execute('update project_task_work set  state=%s where  id=%s ',
                                             ('valid', l1.work_id.id))
@@ -767,7 +772,8 @@ class ProjectTaskWork(models.Model):
     kit = fields.Char(string='Kit')
     project_id = fields.Many2one('project.project', string='Project_id')
     task_id = fields.Many2one('project.task', string='Wizard')
-    kit_id = fields.Char(string='Kit')
+    kit_id = fields.Many2one('product.kit', string='Nom Kit', ondelete='cascade', select="1",
+                             readonly=True, states={'draft': [('readonly', False)]}, )
     date_start = fields.Date('Date')
     date_end = fields.Date('Date')
     uom_id = fields.Char(string='uom')
@@ -839,6 +845,9 @@ class ProjectTaskWorkLine(models.Model):
     name = fields.Char(string='Name')
     group_id2 = fields.Many2one('base.group', 'Done by', select="1", readonly=True,
                                 states={'affect': [('readonly', False)]}, )
+    employee_id = fields.Many2one('hr.employee', string='Employee')
+    gest_id = fields.Many2one('hr.employee', string='Superviseur', readonly=True,
+                              states={'affect': [('readonly', False)]}, )
 
 
 class ProductUom(models.Model):
@@ -953,3 +962,14 @@ class HrAcademic(models.Model):
     diploma = fields.Char(string='Diploma', translate=True)
     employee_id = fields.Many2one('hr.employee', string='Employee')
     categ_id = fields.Many2one('product.category', string=' Professional Experiences', )
+
+
+class ProductKit(models.Model):
+    _name = "product.kit"
+    name = fields.Char('Name')
+
+
+class Product(models.Model):
+    _inherit = 'product.product'
+    rel_id = fields.Many2one('product.kit')
+    is_load = fields.Boolean(default=1)

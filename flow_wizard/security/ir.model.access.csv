@@ -13,3 +13,6 @@ access.base.invoices.merge.automatic.wizard.project.task.work.rel,access_base_in
 ,base.group_user,1,1,1,1
 access.base.group.merge.automatic.wizard,access_base_group_merge_automatic_wizard,flow_wizard.model_base_group_merge_automatic_wizard,base.group_user,1,1,1,1
 access.base.group,access_base_group,flow_wizard.model_base_group,base.group_user,1,1,1,1
+access.product.kit,access_product_kit,flow_wizard.model_product_kit,base.group_user,1,1,1,1
+
+
