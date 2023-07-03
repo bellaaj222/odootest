@@ -967,6 +967,7 @@ class HrAcademic(models.Model):
 class ProductKit(models.Model):
     _name = "product.kit"
     name = fields.Char('Name')
+    type_ids = fields.One2many('product.product', 'rel_id')
 
 
 class Product(models.Model):

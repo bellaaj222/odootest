@@ -16,7 +16,8 @@
 
 
                     <field name="state" widget="statusbar" statusbar_visible="draft,affect"
-                           statusbar_colors="{&quot;draft&quot;:&quot;blue&quot;}" readonly="1"/>
+                           statusbar_colors="{'draft': 'blue'}" readonly="0"/>
+
                 </header>
                 <sheet string="Project">
                     <!-- <h5>***If Assigned to: is empty , the user from the destination task will be assigned!</h5> -->
@@ -61,9 +62,10 @@
                             <group>
                                 <group>
                                     <field name="project_id" invisible="1"/>
-                                    <field name="time_ch" widget="odoo_timepicker"
-                                           options="{'step': 5, 'minTime': '00:00', 'maxTime': '10:00','timeFormat':'H:i'}"
+                                    <field name="time_ch" widget="time"
+                                           options="{'step': 5, 'timeFormat': 'HH:mm', 'minTime': '00:00', 'maxTime': '10:00'}"
                                            required="1"/>
+
                                     <field name="actions" string="Actions" required="1"
                                            on_change="onchange_actions(actions)"/>
                                     <field name="categ_id" string="Département"
