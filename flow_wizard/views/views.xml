@@ -132,15 +132,15 @@
                         <page string="Liens">
                             <group>
 
-                                <field name="link_ids" nolabel="1">
-                                    <tree string="Taches" editable="bottom">
-                                        <field name="name" string="Description"/>
-                                        <field name="ftp" string="FTP"/>
-                                        <field name="flow_id" string="Flow_id" invisible="1"/>
-
-                                    </tree>
-
-                                </field>
+                                <!--                                <field name="link_ids" nolabel="1">-->
+                                <!--                                    <tree string="Taches" editable="bottom">-->
+                                <!--                                        <field name="name" string="Description"/>-->
+                                <!--                                        <field name="ftp" string="FTP"/>-->
+                                <!--                                        <field name="flow_id" string="Flow_id" invisible="1"/>-->
+                                <!---->
+                                <!--                                    </tree>-->
+                                <!---->
+                                <!--                                </field>-->
                                 <group>
                                     <field name="attach_ids" widget="many2many_binary" class="oe_inline"
                                            string="Pièces Jointes">
@@ -200,26 +200,34 @@
             </form>
         </field>
     </record>
-    <record id="base_flow_merge_automatic_wizard_action" model="ir.actions.act_window">
-        <field name="name">base.flow.merge.automatic.wizard</field>
-        <field name="type">ir.actions.act_window</field>
-        <field name="res_model">base.flow.merge.automatic.wizard</field>
-        <field name="view_mode">tree,form,activity</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create your first FLow
-            </p>
-            <p>
-                You must define a product for everything you sell or purchase,
-                whether it's a storable product, a consumable or a service.
-            </p>
+
+    <record id="action_workflow_tree" model="ir.ui.view">
+        <field name="name">action.workflow.tree</field>
+        <field name="model">base.flow.merge.automatic.wizard</field>
+        <field name="arch" type="xml">
+            <tree default_order='create_date desc'>
+                <field name="create_date" string="Date Action"/>
+                <field name="id" invisible="1"/>
+                <field name="categ_id" string="Département"/>
+                <field name="project_id" string="Projet"/>
+                <field name="zo" string="Zone"/>
+                <field name="sect" string="Secteur"/>
+                <field name="actions" string="Nature Action"/>
+                <field name="mail_send" string="Envois Mail"/>
+                <field name="note" string="Commentaire"/>
+                <field name="create_uid" string="Créateur"/>
+                <field name="create_date" string="Date Création"/>
+                <field name="state" invisible="1"/>
+            </tree>
         </field>
     </record>
-    <menuitem
-            id="menu_action_flow_root"
-            name=" Action Workflow"
-            action="base_flow_merge_automatic_wizard_action"
-            parent="menu_ActionWrk_master"
-            sequence="0"/>
+
+    <record id="action_work_flow" model="ir.actions.act_window">
+        <field name="name">Actions WKF</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">base.flow.merge.automatic.wizard</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <menuitem id="menu_action_workflow" name="Actions WorkFlow" sequence="0" action="action_work_flow"/>
 
 </odoo>

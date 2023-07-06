@@ -1,13 +1,11 @@
 from datetime import datetime, date
-
 from stdnum import py
-
 from odoo import models, fields, api
 from odoo.exceptions import UserError
 from odoo.tools.translate import _
 
 
-class MergeflowsLine(models.Model):
+class MergeFlowsLine(models.Model):
     _name = 'base.flow.merge.line'
     _order = 'min_id asc'
 
@@ -148,13 +146,13 @@ class EbMergeflows(models.Model):
                     l.append(work.project_id.id)
                 if len(l) > 1:
                     print("impo1")
-                    raise UserError(_('Action impossible!4'), _("Action possible pour un seul projet  !"))
+                    raise UserError(_('Action impossible!4\nAction possible pour un seul projet  !'))
                 if work.zone not in l1:
                     print("impo2")
                     l1.append(work.zone)
                 if len(l1) > 1:
                     print("impo3")
-                    raise UserError(_('Action impossible!5'), _("Action possible pour une seule zone  !"))
+                    raise UserError(_('Action impossible!5\nAction possible pour une seule zone  !'))
                 if work.secteur not in l2:
                     l2.append(work.secteur)
                 if len(l2) > 1:
@@ -209,8 +207,6 @@ class EbMergeflows(models.Model):
     user_id = fields.Many2one('res.users', string='Assigned')
     dst_work_id = fields.Many2one('project.task.work', string='Destination Task')
     dst_project = fields.Many2one('project.project', string="Project")
-    link_ids = fields.One2many('link.line', 'flow_id', string="Work done", readonly=True,
-                               states={'draft': [('readonly', False)]}, )
     attach_ids = fields.Many2many('ir.attachment', 'ir_attach_rel', 'flow_id', 'attachment_id', string="Attachments",
                                   help="If any")
     line_ids = fields.One2many(
@@ -394,14 +390,9 @@ class EbMergeflows(models.Model):
         }
 
     def button_approve(self, product_id=None):
+
         print("approve")
-        line_obj = self.pool.get('base.flow.merge.automatic.wizard')
-        line_obj1 = self.pool.get('base.flow.merge.line')
-        work_line = self.pool.get('project.task.work')
-        wl = self.pool.get('project.task.work.line')
         task_line = self.env['base.flow.merge.line']
-        task_obj = self.pool.get('project.task')
-        emp_obj = self.pool.get('hr.employee')
         product = self.env['product.product'].browse(product_id)
 
         tt = []
@@ -650,7 +641,7 @@ class EbMergeflows(models.Model):
                     (aff.id, work.id))
 
             if work.state == 'close':
-                raise UserError(_('Erreur!'), _("Travaux clotués!"))
+                raise UserError(_('Erreur!\nTravaux clotués!'))
 
             done = 0
             if work.gest_id.user_id.id == self._uid:
@@ -727,12 +718,9 @@ class EbMergeflows(models.Model):
         this = self
 
         # Obtenir les objets des modèles correspondants
-        work_obj = self.env['base.flow.merge.automatic.wizard']
         task_work_obj = self.env['project.task.work']
-        task_work = self.env['project.task.work']
 
         # Initialiser les listes pour stocker les données
-        ltask1 = []
         ltask2 = []
 
         # Insérer les enregistrements dans la table de relation
@@ -765,57 +753,20 @@ class EbMergeflows(models.Model):
 
 
 class ProjectTaskWork(models.Model):
-    _name = 'project.task.work'
+    _inherit = 'project.task.work'
 
-    _description = 'Task Work'
-    name = fields.Char(string='Name')
-    kit = fields.Char(string='Kit')
-    project_id = fields.Many2one('project.project', string='Project_id')
-    task_id = fields.Many2one('project.task', string='Wizard')
-    kit_id = fields.Many2one('product.kit', string='Nom Kit', ondelete='cascade', select="1",
-                             readonly=True, states={'draft': [('readonly', False)]}, )
-    date_start = fields.Date('Date')
-    date_end = fields.Date('Date')
-    uom_id = fields.Char(string='uom')
-    poteau_t = fields.Integer('Time Spent')
-    gest_id = fields.Many2one('hr.employee', string='Wizard')
-    state = fields.Selection([
-        ('draft', 'T. Planifiés'),
-        ('affect', 'T. Affectés'),
-        ('tovalid', 'T. Réalisés'),
-        ('affect_con', 'T. Affectés controle'),
-        ('affect_corr', 'T. Affectés corrction'),
+    def _default_flow(self):
 
-        ('validcont', 'Controle Validée'),
-        ('tovalidcorrec', 'Correction Encours'),
-        ('tovalidcont', 'Controle Encours'),
-        ('validcorrec', 'Correction Validée'),
-        ('valid', 'T. Tarminées'),
-        ('paid', 'Factures Approuvées'),
-        ('cancel', 'T. Annulés'),
-        ('pending', 'T. Suspendus'),
-        ('close', 'Traité')
-    ],
-        'Status', copy=False)
+        for rec in self:
+            self.env.cr.execute('select id from base_flow_merge_line where work_id= %s', (rec.id,))
+            work_ids = self.env.cr.fetchone()
+            if work_ids:
+                rec.done4 = 1
+            else:
+                rec.done4 = 0
 
-    work_id = fields.Many2one('project.task.work', string='Work_id')
-    active = fields.Boolean(string='Is doctor?')
-    line_ids = fields.One2many(
-        'base.flow.merge.line', 'wizard_id', string=u"Role lines", copy=True,
-        states={'draft': [('readonly', False)]}, )
-    sequence = fields.Integer(string='sequence')
-    zone = fields.Integer('Color Index')
-
-    secteur = fields.Integer('Color Index')
-
-    categ_id = fields.Many2one('product.category', string='categ_id',
-                               )
-    color = fields.Integer(string='Nbdays')
-    zo = fields.Char(string='Zone')
-    sect = fields.Char(string='Secteur', readonly=True, states={'draft': [('readonly', False)]}, )
-    gest_id3 = fields.Many2one('hr.employee', string='Coordinateur 3', copy=True, readonly=True,
-                               states={'draft': [('readonly', False)]}, )
-    display = fields.Boolean(string='Réalisable')
+    done4 = fields.Boolean(compute='_default_flow', string='Company Currency', readonly=True,
+                           states={'draft': [('readonly', False)]}, )
 
     def action_open(self):
         current = self.ids[0]
@@ -837,30 +788,6 @@ class ProjectTaskWork(models.Model):
                         'active_model': self._name},
             'domain': []
         }
-
-
-class ProjectTaskWorkLine(models.Model):
-    _name = 'project.task.work.line'
-    _description = 'Project Task Work Line'
-    name = fields.Char(string='Name')
-    group_id2 = fields.Many2one('base.group', 'Done by', select="1", readonly=True,
-                                states={'affect': [('readonly', False)]}, )
-    employee_id = fields.Many2one('hr.employee', string='Employee')
-    gest_id = fields.Many2one('hr.employee', string='Superviseur', readonly=True,
-                              states={'affect': [('readonly', False)]}, )
-
-
-class ProductUom(models.Model):
-    _name = 'product.uom'
-    name = fields.Char(string='Name')
-
-
-class LinkLine(models.Model):
-    _name = 'link.line'
-    flow_id = fields.Integer(string='Flow')
-    name = fields.Char(string='Name')
-
-    ftp = fields.Char(string='Name')
 
 
 class WorkHisto(models.Model):
@@ -893,45 +820,6 @@ class WorkHistoLine(models.Model):
     execute_by = fields.Boolean(default="False")
 
 
-class BaseInvoicesMergeAutomaticWizard(models.Model):
-    _name = 'base.invoices.merge.automatic.wizard'
-    _description = 'Base Invoices Merge Automatic Wizard'
-
-    name = fields.Char(string='Name')
-    state = fields.Selection([
-        ('draft', 'Draft'),
-        ('affect', 'Affect'),
-    ], string='State')
-    categ_id = fields.Many2one('product.category', string='Wizard', readonly=True,
-                               states={'draft': [('readonly', False)]}, )
-
-
-class ProjectProject(models.Model):
-    _inherit = 'project.project'
-    is_kit = fields.Boolean(default=True, )
-
-
-class BaseInvoicesMergeAutomaticWizardProjectTaskWorkRel(models.Model):
-    _name = 'base.invoices.merge.automatic.wizard.project.task.work.rel'
-    _description = 'Base Invoices Merge Automatic Wizard Project Task Work Relation'
-
-    # base_invoices_merge_automatic_wizard_id = fields.Many2one('base.invoices.merge.automatic.wizard', string='Wizard')
-    # project_task_work_id = fields.Many2one('project.task.work', string='Task Work')
-
-    # Add other fields as needed
-
-    name = fields.Char(string='Field Label')
-    name = fields.Char(string='Field Label')
-
-
-class ProductCategory(models.Model):
-    _inherit = 'product.category'
-    _description = "Product Category"
-
-    name = fields.Char(string='Name', required=True, translate=True, select=True)
-    categ_id = fields.Many2one('product.category', string='Wizard')
-
-
 class BaseGroupMergeAutomaticWizard(models.Model):
     _name = 'base.group.merge.automatic.wizard'
     _description = 'Automatic Group Merge Wizard'
@@ -951,26 +839,3 @@ class BaseGroupMergeAutomaticWizard(models.Model):
     name = fields.Char(string='Name')
 
 
-class BaseGroup(models.Model):
-    _name = "base.group"
-    name = fields.Char('Name')
-
-
-class HrAcademic(models.Model):
-    _name = 'hr.academic'
-
-    diploma = fields.Char(string='Diploma', translate=True)
-    employee_id = fields.Many2one('hr.employee', string='Employee')
-    categ_id = fields.Many2one('product.category', string=' Professional Experiences', )
-
-
-class ProductKit(models.Model):
-    _name = "product.kit"
-    name = fields.Char('Name')
-    type_ids = fields.One2many('product.product', 'rel_id')
-
-
-class Product(models.Model):
-    _inherit = 'product.product'
-    rel_id = fields.Many2one('product.kit')
-    is_load = fields.Boolean(default=1)

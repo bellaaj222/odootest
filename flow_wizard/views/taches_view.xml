@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="action_action_work" model="ir.actions.server">
-        <field name="name">Actions Work FLow</field>
+        <field name="name">Actions Work Flow</field>
         <field name="type">ir.actions.server</field>
         <field name="model_id" ref="model_project_task_work"/>
         <field name="binding_model_id" ref="model_project_task_work"/>
@@ -11,49 +11,5 @@
             action = records.action_open()
         </field>
     </record>
-
-    <record id="view_projet_tache_tree" model="ir.ui.view">
-        <field name="name">hospital.patient.tree</field>
-        <field name="model">project.task.work</field>
-        <field name="arch" type="xml">
-            <tree>
-                <field name="name" string="Name"/>
-                <field name="sequence"/>
-                <field name="categ_id" string="Départment"/>
-                <field name="project_id" string="Projet"/>
-                <field name="zone" string="Zone"/>
-                <field name="secteur" string="Secteur"/>
-                <field name="date_start" string="date start"/>
-                <field name="date_end" string="date end"/>
-                <field name="state"/>
-
-
-            </tree>
-        </field>
-    </record>
-
-
-    <record id="action_Projet_Taches" model="ir.actions.act_window">
-        <field name="name">Taches</field>
-        <field name="type">ir.actions.act_window</field>
-        <field name="res_model">project.task.work</field>
-        <field name="view_mode">tree,form,activity</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create your first tache
-            </p>
-            <p>
-                You must define a product for everything you sell or purchase,
-                whether it's a storable product, a consumable or a service.
-            </p>
-        </field>
-    </record>
-    <menuitem
-            id="menu_taches"
-            name="Taches"
-            action="action_Projet_Taches"
-            parent="menu_taches_master"
-            sequence="0"/>
-
 
 </odoo>

@@ -21,16 +21,14 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'project', 'hr', 'mail'],
+    'depends': ['base', 'project_custom', 'eb_invoices_wizard'],
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
-        'views/menu.xml',
+        'security/ir.model.access.csv',
         'views/views.xml',
-        'views/templates.xml',
         'views/taches_view.xml',
-
+        'views/inherit.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
