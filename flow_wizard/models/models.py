@@ -212,7 +212,7 @@ class EbMergeflows(models.Model):
     line_ids = fields.One2many(
         'base.flow.merge.line', 'wizard_id', string=u"Role lines", copy=True,
         states={'draft': [('readonly', False)]}, )
-    time_ch = fields.Char(string='Temps de gestion')
+    time_ch = fields.Char(string='Temps de gestion', readonly=True, states={'draft': [('readonly', False)]})
     project_id = fields.Many2one('project.project', string='Wizard')
     task_id = fields.Many2one('project.task', string='task_id')
     work_id = fields.Many2one('project.task.work', string='work_id')
@@ -277,7 +277,7 @@ class EbMergeflows(models.Model):
     amount_total = fields.Float(compute='_amount_all', string='amount_total')
     amount_tvq = fields.Float(compute='_amount_all', string='amount_tvq')
     amount_tps = fields.Float(compute='_amount_all', string='amount_tps')
-    categ_id = fields.Many2one('product.category', string='Wizard', readonly=False,
+    categ_id = fields.Many2one('product.category', string='Wizard', readonly=True,
                                states={'draft': [('readonly', False)]}, )
     employee_ids = fields.Many2many('hr.employee', 'base_flow_merge_automatic_wizard_hr_employee_rel',
                                     'base_flow_merge_automatic_wizard_id', 'hr_employee_id', string='Legumes',
@@ -407,6 +407,7 @@ class EbMergeflows(models.Model):
 
         if self.actions == 'keep':
             print("keep")
+            self.state = 'affect'
             for line in self.line_ids.ids:
                 l1 = task_line.browse(line)
                 if self.project_id.is_kit:
@@ -437,7 +438,7 @@ class EbMergeflows(models.Model):
                 })
 
         if self.actions == 'suspend':
-
+            self.state = 'pending'
             for line in this.line_ids.ids:
 
                 l1 = task_line.browse(line)
@@ -467,6 +468,7 @@ class EbMergeflows(models.Model):
 
         if self.actions == 'archiv':
             print("archiv")
+            self.state = 'cancel'
             for line in this.line_ids.ids:
                 l1 = task_line.browse(line)
                 if l1.work_id:  # Vérifier si work_id est non nul
@@ -503,6 +505,7 @@ class EbMergeflows(models.Model):
                             tt.append(rec_line.group_id2.ids)
 
             if this.actions == 'treated':
+                self.state = 'close'
                 for line in this.line_ids.ids:
                     l1 = task_line.browse(line)
                     if this.project_id.is_kit is True:
@@ -540,6 +543,38 @@ class EbMergeflows(models.Model):
                         if rec_line.group_id2:
                             if rec_line.group_id2.ids not in tt:
                                 tt.append(rec_line.group_id2.ids)
+            if self.actions == 'permis':
+                print("permis")
+                for line in self.line_ids:
+                    l1 = self.env['task.line'].browse(line.id)
+                    if self.project_id.is_kit:
+                        self.env.cr.execute(
+                            'UPDATE project_task_work SET state=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
+                            ('valid', l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur)
+                        )
+                    else:
+                        self.env.cr.execute('UPDATE project_task_work SET state=%s WHERE id=%s',
+                                            ('valid', l1.work_id.id))
+
+                    res_user = self.env['res.users'].browse(self.env.uid)
+                    wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
+                    wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                    self.env['work.histo.line'].create({
+                        'actions': 'permis',
+                        'type': 'aw',
+                        'execute_by': self.employee_id.name or False,
+                        'create_by': res_user.employee_id.name,
+                        'work_histo_id': wk_histo_id,
+                        'date': fields.Datetime.now(),
+                        'coment1': self.note or False,
+                        'id_object': self.id,
+                    })
+
+                    for kk in l1.work_id.line_ids:
+                        rec_line = self.env['project.task.work.line'].browse(kk)
+                        if rec_line.group_id2:
+                            if rec_line.group_id2.ids not in tt:
+                                tt.append(rec_line.group_id2.ids)
             if this.date_start_r:
                 for line in this.work_ids:
                     l1 = self.env['project.task.work'].browse(line.id)
@@ -567,20 +602,14 @@ class EbMergeflows(models.Model):
                 print("Invalid time format: expected hh:mm")
 
             res_user = self.env['res.users'].browse(self.env.uid)
-            for rec in this.line_ids[0]:
-                vals = {
-                    'create_date': fields.Date.today(),
-                    'date_start_r': fields.Date.today(),
-                    'project_id': rec.work_id.project_id.id,
-                    'zo': rec.work_id.zone,
-                    'sect': rec.work_id.secteur,
-                    'gest_id': rec.work_id.gest_id.id,
-                    'state': 'valid',
-                    'active': True,
-                    'name': 'gestion affectation',
-                }
-                base_group = self.env['base.group.merge.automatic.wizard'].create(vals)
-                base_group_id = base_group.id
+            for rec in self.line_ids[0]:
+                self.env.cr.execute(
+                    "INSERT INTO base_group_merge_automatic_wizard (create_date,date_start_r,project_id,zo,sect,gest_id,state,active,name) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                    (fields.Date.today(), fields.Date.today(), rec.work_id.project_id.id, rec.work_id.zone,
+                     rec.work_id.secteur,
+                     rec.work_id.gest_id.id, 'valid', True, 'gestion affectation')
+                )
+                self.env.cr.execute('SELECT id FROM base_group_merge_automatic_wizard ORDER BY id DESC LIMIT 1')
 
                 if rec.work_id.categ_id.id == 3:
                     print("dep1")
@@ -837,5 +866,3 @@ class BaseGroupMergeAutomaticWizard(models.Model):
     ], string='State', default='draft')
     active = fields.Boolean(string='Active', default=True)
     name = fields.Char(string='Name')
-
-
