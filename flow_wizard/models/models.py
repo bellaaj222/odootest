@@ -504,45 +504,45 @@ class EbMergeflows(models.Model):
                         if rec_line.group_id2.ids not in tt:
                             tt.append(rec_line.group_id2.ids)
 
-            if this.actions == 'treated':
-                self.state = 'close'
-                for line in this.line_ids.ids:
-                    l1 = task_line.browse(line)
-                    if this.project_id.is_kit is True:
-                        print("traeted")
-                        self.env.cr.execute(
-                            'update project_task_work set  state=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
-                            (
-                                'valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone,
-                                l1.work_id.secteur))
-                        self.env.cr.execute(
-                            'update project_task_work set  active=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
-                            (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
-                    else:
-                        self.env.cr.execute('update project_task_work set  state=%s where  id=%s ',
-                                            ('valid', l1.work_id.id))
-                        self.env.cr.execute('update project_task_work set  active=%s where  id=%s ',
-                                            (False, l1.work_id.id))
+        if this.actions == 'treated':
+            self.state = 'close'
+            for line in this.line_ids.ids:
+                l1 = task_line.browse(line)
+                if this.project_id.is_kit is True:
+                    print("traeted")
+                    self.env.cr.execute(
+                        'update project_task_work set  state=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
+                        (
+                            'valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone,
+                            l1.work_id.secteur))
+                    self.env.cr.execute(
+                        'update project_task_work set  active=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
+                        (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+                else:
+                    self.env.cr.execute('update project_task_work set  state=%s where  id=%s ',
+                                        ('valid', l1.work_id.id))
+                    self.env.cr.execute('update project_task_work set  active=%s where  id=%s ',
+                                        (False, l1.work_id.id))
 
-                    res_user = self.env['res.users'].browse(self.env.uid)
-                    wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
-                    wk_histo_id = self.env['work.histo'].browse(wk_histo).id
-                    self.env['work.histo.line'].create({
-                        'actions': 'treated',
-                        'type': 'aw',
-                        'execute_by': this.employee_id.name or False,
-                        'create_by': res_user.employee_id.name,
-                        'work_histo_id': wk_histo_id,
-                        'date': datetime.now(),
-                        'coment1': this.note or False,
-                        'id_object': self.id,
-                    }),
+                res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
+                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                self.env['work.histo.line'].create({
+                    'actions': 'treated',
+                    'type': 'aw',
+                    'execute_by': this.employee_id.name or False,
+                    'create_by': res_user.employee_id.name,
+                    'work_histo_id': wk_histo_id,
+                    'date': datetime.now(),
+                    'coment1': this.note or False,
+                    'id_object': self.id,
+                }),
 
-                    for kk in l1.work_id.line_ids.ids:
-                        rec_line = self.env['project.task.work.line'].browse(kk)
-                        if rec_line.group_id2:
-                            if rec_line.group_id2.ids not in tt:
-                                tt.append(rec_line.group_id2.ids)
+                for kk in l1.work_id.line_ids.ids:
+                    rec_line = self.env['project.task.work.line'].browse(kk)
+                    if rec_line.group_id2:
+                        if rec_line.group_id2.ids not in tt:
+                            tt.append(rec_line.group_id2.ids)
             if self.actions == 'permis':
                 print("permis")
                 for line in self.line_ids:
