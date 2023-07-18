@@ -157,7 +157,7 @@ class EbMergeflows(models.Model):
                     l2.append(work.secteur)
                 if len(l2) > 1:
                     print("impo4")
-                    raise UserError(_('Action impossible!6'), _("Action possible pour un seul secteur  !"))
+                    raise UserError(_('Action impossible!6\nAction possible pour une seule zone  !'))
                 r.append((0, 0, {'work_id': work.id, 'date_start_r': work.date_start, 'date_end_r': work.date_end,
                                  'color1': work.color, 'uom_id_r': work.uom_id.id, 'poteau_t': work.poteau_t,
                                  'gest_id': work.gest_id.id, 'state': work.state
