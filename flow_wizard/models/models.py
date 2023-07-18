@@ -98,15 +98,15 @@ class EbMergeflows(models.Model):
                 if work.project_id.id not in l:
                     l.append(work.project_id.id)
                 if len(l) > 1:
-                    raise UserError(_('Action impossible!2'), _("Action possible pour un seul projet  !"))
+                    raise UserError(_('Action impossible!2\nAction possible pour un seul projet  !'))
                 if work.zone not in l1:
                     l1.append(work.zone)
                 if len(l1) > 1:
-                    raise UserError(_('Action impossible!3'), _("Action possible pour une seule zone  !"))
+                    raise UserError(_('Action impossible!3\nAction possible pour un seul zone  !'))
                 if work.secteur not in l2:
                     l2.append(work.secteur)
                 if len(l2) > 1:
-                    raise UserError(_('Action impossible!4'), _("Action possible pour un seul secteur  !"))
+                    raise UserError(_('Action impossible!3\nAction possible pour un secteur zone  !'))
                 r = []
                 for task_id in active_ids:
                     work = self.env['project.task.work'].browse(task_id)
@@ -200,6 +200,8 @@ class EbMergeflows(models.Model):
             flow.amount_tvq = flow.amount_untaxed * tvq
             flow.amount_total = flow.amount_untaxed + flow.amount_tps + flow.amount_tvq
 
+    link_ids = fields.One2many('link.line', 'flow_id', string="Work done", readonly=True,
+                               states={'draft': [('readonly', False)]}, )
     current_user = fields.Many2one('res.users', compute='_get_current_user')
     gest_id = fields.Many2one('hr.employee', string='Wizard')
     work_ids = fields.Many2many('project.task.work', string='flows', readonly=True,
@@ -248,7 +250,6 @@ class EbMergeflows(models.Model):
                                  'Archiver Les Taches Sélectionnées(Retire les taches du tableau de bord et de la recherche)'),
                                 ('suspend', 'Suspendre Temporairement Les Taches Encours'),
                                 ('treated', 'Cloturer Définitivement Les Taches Encours'),
-
 
                                 ], readonly=True, states={'draft': [('readonly', False)]}, )
     mail_send = fields.Selection([('yes', 'Oui'),
@@ -391,7 +392,6 @@ class EbMergeflows(models.Model):
 
     def button_approve(self, product_id=None):
 
-        print("approve")
         task_line = self.env['base.flow.merge.line']
         product = self.env['product.product'].browse(product_id)
 
@@ -414,14 +414,10 @@ class EbMergeflows(models.Model):
                     self.env.cr.execute(
                         'UPDATE project_task_work SET active=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
                         (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
-                    self.env.cr.execute(
-                        'UPDATE project_task_work SET display=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                        (True, l1.work_id.kit_id.id, self.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+
                 else:
 
                     self.env.cr.execute('UPDATE project_task_work SET active=%s WHERE id=%s ',
-                                        (True, l1.work_id.id))
-                    self.env.cr.execute('UPDATE project_task_work SET display=%s WHERE id=%s ',
                                         (True, l1.work_id.id))
 
                 res_user = self.env['res.users'].browse(self.env.uid)
@@ -516,18 +512,15 @@ class EbMergeflows(models.Model):
                         (
                             'valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone,
                             l1.work_id.secteur))
-                    self.env.cr.execute(
-                        'update project_task_work set  active=%s where  kit_id=%s and project_id=%s and zone=%s and secteur=%s',
-                        (False, l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur))
+
                 else:
                     self.env.cr.execute('update project_task_work set  state=%s where  id=%s ',
                                         ('valid', l1.work_id.id))
-                    self.env.cr.execute('update project_task_work set  active=%s where  id=%s ',
-                                        (False, l1.work_id.id))
 
                 res_user = self.env['res.users'].browse(self.env.uid)
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
                 wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+                print(wk_histo_id, "tratedtesttetetststse")
                 self.env['work.histo.line'].create({
                     'actions': 'treated',
                     'type': 'aw',
@@ -547,26 +540,45 @@ class EbMergeflows(models.Model):
         if self.actions == 'permis':
             print("permis")
             self.state = 'affect'
-            for line in self.line_ids:
+            for line in this.line_ids.ids:
                 l1 = task_line.browse(line)
+                print(l1, "erfgfghgffgfghghjhjhjhjh")
                 if self.project_id.is_kit is True:
                     self.env.cr.execute(
                         'UPDATE project_task_work SET state=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
                         ('valid', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur)
                     )
-                    self.env.cr.execute(
-                        'UPDATE project_task_work SET state=%s WHERE kit_id=%s AND project_id=%s AND zone=%s AND secteur=%s',
-                        ('False', l1.work_id.kit_id.id, this.project_id.id, l1.work_id.zone, l1.work_id.secteur)
-                    )
+
                 else:
                     self.env.cr.execute('UPDATE project_task_work SET state=%s WHERE id=%s',
                                         ('valid', l1.work_id.id))
-                    self.env.cr.execute('UPDATE project_task_work SET state=%s WHERE id=%s',
-                                        (False, l1.work_id.id))
 
                 res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo_id = None
+                print(wk_histo_id, "1111111111111111111")
+
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
-                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+
+                if not wk_histo:
+                  for item in tt:
+                    work_histo = self.env['work.histo'].create({
+                        'task_id': item.task_id.id,
+                        'categ_id': item.categ_id.id,
+                        'product_id': item.product_id.id,
+                        'name': item.name,
+                        'date': item.date_start,
+                        'create_a': datetime.now(),
+                        'create_by': res_user.employee_id.name,
+                        'zone': item.zone,
+                        'secteur': item.secteur,
+                        'project_id': item.project_id.id,
+                        'partner_id': item.project_id.partner_id.id,
+                    })
+                    wk_histo_id = work_histo.id
+                    print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
+                else:
+                    wk_histo_id = wk_histo.id
+
                 self.env['work.histo.line'].create({
                     'actions': 'permis',
                     'type': 'aw',
@@ -615,7 +627,7 @@ class EbMergeflows(models.Model):
                 "INSERT INTO base_group_merge_automatic_wizard (create_date,date_start_r,project_id,zo,sect,gest_id,state,active,name) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (fields.Date.today(), fields.Date.today(), rec.work_id.project_id.id, rec.work_id.zone,
                  rec.work_id.secteur,
-                 rec.work_id.gest_id.id, 'valid', True, 'gestion affectation')
+                 rec.work_id.gest_id.id if rec.work_id.gest_id else None, 'valid', True, 'gestion affectation')
             )
             self.env.cr.execute('SELECT id FROM base_group_merge_automatic_wizard ORDER BY id DESC LIMIT 1')
 
@@ -827,53 +839,6 @@ class ProjectTaskWork(models.Model):
         }
 
 
-class WorkHisto(models.Model):
-    _name = 'work.histo'
-    _description = 'Work Histo'
-
-    name = fields.Char(string='Name')
-    work_id = fields.Many2one('project.task.work', string='Work')
-    histo_line_ids = fields.One2many('work.histo.line', 'work_histo_id', string='Histo Lines')
-
-
-class WorkHistoLine(models.Model):
-    _name = 'work.histo.line'
-    _description = 'Work Histo Line'
-
-    actions = fields.Selection([
-        ('keep', 'Laisser Les Taches Actives'),
-        ('permis', 'Terminer Les Taches'),
-        ('archiv', 'Archiver Les Taches'),
-        ('suspend', 'Suspendre Temporairement Les Taches'),
-        ('treated', 'Cloturer Définitivement Les Taches'),
-        ('cancel', 'Annuler Les Taches')
-    ], string='Actions')
-
-    type = fields.Selection([
-        ('aw', 'AW')
-    ], string='Type')
-    create_by = fields.Char(string='Created By')
-    work_histo_id = fields.Many2one('work.histo', string='Work Histo')
-    date = fields.Datetime(string='Date')
-    coment1 = fields.Text(string='Comment 1')
-    id_object = fields.Integer(string='Object ID')
-    execute_by = fields.Boolean(default="False")
-
-
-class BaseGroupMergeAutomaticWizard(models.Model):
-    _name = 'base.group.merge.automatic.wizard'
-    _description = 'Automatic Group Merge Wizard'
-
-    create_date = fields.Date(string='Create Date', default=fields.Date.today())
-    date_start_r = fields.Date(string='Date Start R', default=fields.Date.today())
-    project_id = fields.Many2one('project.project', string='Project')
-    zo = fields.Char(string='Zone')
-    sect = fields.Char(string='Secteur')
-    gest_id = fields.Many2one('res.partner', string='Gest')
-    state = fields.Selection([
-        ('draft', 'Draft'),
-        ('valid', 'Validated'),
-        ('cancel', 'Cancelled')
-    ], string='State', default='draft')
-    active = fields.Boolean(string='Active', default=True)
-    name = fields.Char(string='Name')
+class LinkLine(models.Model):
+    _inherit = 'link.line'
+    flow_id = fields.Many2one('base.flow.merge.automatic.wizard', string='Event')

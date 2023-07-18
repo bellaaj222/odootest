@@ -6,10 +6,14 @@ from odoo.exceptions import UserError
 from odoo.tools.translate import _
 import math
 
+
 class TaskWork(models.Model):
     _name = 'project.task.work'
     _description = 'Project Task Work'
     _rec_name = 'id'
+
+    work_id = fields.Char(string='work ID')
+    work_id2 = fields.Char(string='work ID')
 
     def _default_done(self):
 
@@ -113,6 +117,15 @@ class TaskWork(models.Model):
             else:
                 rec.done3 = 0
 
+    def _default_flow(self):
+
+        for rec in self:
+            self.env.cr.execute('select id from base_flow_merge_line where work_id= %s', (rec.id,))
+            work_ids = self.env.cr.fetchone()
+            if work_ids:
+                rec.done4 = 1
+            else:
+                rec.done4 = 0
 
     def _check_color(self):
 
@@ -202,7 +215,7 @@ class TaskWork(models.Model):
     def _isinter(self):
 
         for book in self:
-            book.is_intervenant = False
+            book.is_intervenant = False  # to set to False.
             if book.line_ids:
                 tt = []
                 for kk in book.line_ids.ids:
@@ -442,7 +455,6 @@ class TaskWork(models.Model):
                                ],
                               string='Status', copy=False)
     kanban_color = fields.Integer(compute='_check_color', string='Couleur')
-    link_ids = fields.One2many('link.type', 'work_id', string='Work done')
     zone = fields.Integer(string='Zone', readonly=True, states={'draft': [('readonly', False)]}, )
     secteur = fields.Integer(string='Secteur', readonly=True, states={'draft': [('readonly', False)]}, )
     zo = fields.Char(string='Zone', readonly=True, states={'draft': [('readonly', False)]}, )
@@ -482,8 +494,6 @@ class TaskWork(models.Model):
     employee_id = fields.Many2one('hr.employee', 'Employé', readonly=True, states={'draft': [('readonly', False)]}, )
     issue_id = fields.Many2one('project.issue', 'Issue ID', select="1", readonly=True,
                                states={'draft': [('readonly', False)]}, )
-    group_id2 = fields.Many2one('base.group.merge.automatic.wizard', string='group 2 ID', select="1", readonly=True,
-                                states={'draft': [('readonly', False)]}, )
     dependency_task_ids = fields.Many2many('project.task.work', 'project_task_dependency_work_rel',
                                            'dependency_work_id', 'work_id', string='Dependencies')
     state = fields.Selection([('draft', 'T. Planifiés'),
@@ -510,14 +520,14 @@ class TaskWork(models.Model):
                            states={'draft': [('readonly', False)]}, )
     done3 = fields.Boolean(compute='_default_done3', string='Company Currency', readonly=True,
                            states={'draft': [('readonly', False)]}, )
+    done4 = fields.Boolean(compute='_default_flow', string='Company Currency', readonly=True,
+                           states={'draft': [('readonly', False)]}, )
     color = fields.Integer(string='Nbdays', readonly=True, states={'draft': [('readonly', False)]}, )
     color1 = fields.Integer(string='Durée(Jours)', readonly=True, states={'affect': [('readonly', False)]}, )
     uom_id = fields.Many2one('product.uom', string='Unité Prévue', required=False, readonly=True,
                              states={'draft': [('readonly', False)]}, )
     uom_id_r = fields.Many2one('product.uom', string='Unité Réelle', readonly=True,
                                states={'affect': [('readonly', False)]}, )
-    # w_id = fields.Many2one('base.task.merge.automatic.wizard', string='Company', readonly=True,
-    #                        states={'draft': [('readonly', False)]}, )
     pourc = fields.Float('Pour C', readonly=True, states={'draft': [('readonly', False)]}, )
     rank = fields.Char('Rank', readonly=True, states={'draft': [('readonly', False)]}, )
     display = fields.Boolean(string='Réalisable')
@@ -548,6 +558,9 @@ class TaskWork(models.Model):
     progress_qty = fields.Float(compute='_get_progress_qty', string='% Qté')
     progress_amount = fields.Float(compute='_get_progress_amount', string='% Montant')
     risk = fields.Char(compute='_get_risk', string='Risk')
+    link_ids = fields.One2many('link.line', 'work_id', string='Work done')
+    r_id = fields.Many2one('risk.management.category', string='r ID', readonly=True,
+                           states={'draft': [('readonly', False)]}, )
 
     def action_affect(self):
 
@@ -556,10 +569,12 @@ class TaskWork(models.Model):
             'type': 'ir.actions.act_window',
             'view_type': 'form',
             'view_mode': 'form',
-            'target': 'popup',
+            'target': 'new',
             'res_model': 'base.invoices.merge.automatic.wizard',
             'view_id': self.env.ref('eb_invoices_wizard.view_merge_tasks_form').id,
-            'context': {'types_affect': 'intervenant'},
+            'context': {'active_ids': self.ids,
+                        'active_model': self._name,
+                        'types_affect': 'intervenant'},
             'domain': []
         }
 
@@ -680,6 +695,363 @@ class TaskWork(models.Model):
         task_obj.write({'state': 'valid', 'paylist_id': pay_id})
         return True
 
+    def action_open_histo(self):
+        this = self[0]
+        ll = []
+        if this.kit_id:
+            wrk = self.env['project.task.work'].search([('project_id', '=', this.project_id.id),
+                                                        ('kit_id', '=', this.kit_id.id),
+                                                        ('zone', '=', this.zone),
+                                                        ('secteur', '=', this.secteur)])
+
+            for work in wrk:
+                hist = self.env['work.histo'].search([('work_id', '=', work.id)])
+                print('hist:', hist)
+                if hist:
+                    for hist_line in hist.mapped('line_ids'):
+                        # print('hist_line.work_histo_id.id:', hist_line.work_histo_id.id)
+                        ll.append(hist_line.work_histo_id.id)
+
+            if not ll:
+                raise ValueError("Pas d'historique pour cette tâche")
+
+            return {
+                'name': 'Historique Tache',
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'res_model': 'work.histo',
+                'res_id': ll[0],
+                'context': {},
+                'domain': []
+            }
+        else:
+            hist = self.env['work.histo'].search([('work_id', '=', this.id)])
+            if hist:
+                return {
+                    'name': 'Historique Tache',
+                    'type': 'ir.actions.act_window',
+                    'view_mode': 'form',
+                    'res_model': 'work.histo',
+                    'res_id': hist.id,
+                    'context': {},
+                    'domain': [('work_id', 'in', this.id)]
+                }
+            else:
+                raise ValueError("Pas d'historique pour cette tâche")
+
+    def action_open(self):
+        project_ids = self.ids[0]
+        task_obj = self.env['project.task.work']
+        emp_obj = self.env['hr.employee']
+        r = []
+        dep = self.env['hr.academic'].search([('categ_id', '=', self.categ_id.id)])
+        self.env['hr.employee'].search([]).write({'vehicle': ''})
+        if dep:
+            for nn in dep:
+                em = self.env['hr.academic'].browse(nn, context=self.env.context).employee_id.id
+                emp_obj.browse(em).write({'vehicle': '1'})
+                r.append(em)
+        self.write({'dep': r})
+        if self.categ_id.id == 6:
+            return {
+                'name': 'Modification Travaux',
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'view_id': self.env.ref('module_name.view_id_1').id,
+                'target': 'new',
+                'res_model': 'project.task.work',
+                'res_id': self.id,
+                'context': {'active_id': self.id},
+                'domain': [('project_id', 'in', [project_ids])]
+            }
+        else:
+            return {
+                'name': ('Modification Travaux'),
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'view_id': self.env.ref('module_name.view_id_2').id,
+                'target': 'new',
+                'res_model': 'project.task.work',
+                'res_id': self.id,
+                'context': {'active_id': self.id},
+                'domain': [('project_id', 'in', [project_ids])]
+            }
+
+    def project_open(self):
+        line_obj = self.env['project.task.work']
+
+        parent = line_obj.browse(self.ids[0])
+
+        return {
+            'name': ('Consultation Projet'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'res_model': 'project.project',
+            'res_id': parent.project_id.id,
+            'view_id': 1758,
+            'context': {},
+            'domain': []
+        }
+
+    def action_open_flow(self):
+        work_ids = self.env['base.flow.merge.line'].search([('work_id', '=', self.id)])
+        list_ids = work_ids.mapped('wizard_id.id')
+
+        return {
+            'name': 'Liste des Actions Workflows',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'target': 'popup',
+            'res_model': 'base.flow.merge.automatic.wizard',
+            'res_id': self.id,
+            'context': {},
+            'domain': [('id', 'in', list_ids)]
+        }
+
+    def action_open_group2(self):
+        tt = []
+
+        if self.line_ids:
+            for rec_line in self.line_ids:
+                if rec_line.group_id2:
+                    if rec_line.group_id2.ids not in tt:
+                        tt.append(rec_line.group_id2.ids)
+
+        if tt:
+            for kk in tt:
+                self.env['base.group.merge.automatic.wizard'].search([('id', 'in', kk)]).write(
+                    {'create_uid': self.env.uid})
+
+        return {
+            'name': 'Consultation Travaux Validés',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'views': [[self.env.ref('eb_group_wizard.retour_bons_production').id, 'tree']],
+
+            'target': 'new',
+            'res_model': 'base.group.merge.automatic.wizard',
+            'context': {},
+            'domain': [('id', 'in', tt)]
+        }
+
+    def action_open_group3(self):
+        tt = []
+
+        for current in self:
+            test1 = self.env['project.task.work.line'].search([('work_id2', '=', current.id)])
+            if test1:
+                for rec_line in test1:
+                    if rec_line.group_id2:
+                        if rec_line.group_id2.ids not in tt:
+                            tt.append(rec_line.group_id2.ids)
+
+            if current.line_ids:
+                for rec_line in current.line_ids:
+                    if rec_line.group_id2:
+                        if rec_line.group_id2.ids not in tt:
+                            tt.append(rec_line.group_id2.ids)
+
+        if tt:
+            self.env['base.group.merge.automatic.wizard'].search([('id', 'in', tt)]).write({'create_uid': self.env.uid})
+
+        return {
+            'name': 'Consultation Travaux Validés',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'views': [[self.env.ref('your_module_name.view_id').id, 'tree']],
+            # Replace 'your_module_name' and 'view_id' with the actual values
+            'target': 'new',
+            'res_model': 'base.group.merge.automatic.wizard',
+            'context': {},
+            'domain': [('id', 'in', tt), ('state1', '!=', 'draft')]
+        }
+
+    def action_open_group4(self):
+        tt = []
+
+        for current in self:
+            test1 = self.env['project.task.work.line'].search([('work_id2', '=', current.id)])
+            if test1:
+                for rec_line in test1:
+                    if rec_line.group_id2:
+                        if rec_line.group_id2.ids not in tt:
+                            tt.append(rec_line.group_id2.ids)
+            if current.line_ids:
+                for rec_line in current.line_ids:
+                    if rec_line.group_id2:
+                        if rec_line.group_id2.ids not in tt:
+                            tt.append(rec_line.group_id2.ids)
+        if tt:
+            self.env['base.group.merge.automatic.wizard'].search([('id', 'in', tt)]).write({'create_uid': self.env.uid})
+
+        return {
+            'name': 'Consultation Travaux Validés',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'views': [[self.env.ref('your_module_name.view_id').id, 'tree']],
+            # Replace 'your_module_name' and 'view_id' with the actual values
+            'target': 'new',
+            'res_model': 'base.group.merge.automatic.wizard',
+            'context': {},
+            'domain': [('id', 'in', tt), ('state2', '!=', 'draft')]
+        }
+
+    def action_open_group(self):
+        tt = []
+
+        if self.line_ids:
+            for rec_line in self.line_ids:
+                if rec_line.group_id:
+                    if rec_line.group_id.ids not in tt:
+                        tt.append(rec_line.group_id.ids)
+
+        return {
+            'name': 'Consultation Travaux Validés',
+            'type': 'ir.actions.act_window',
+            'view_mode': 'tree,form',
+            'views': [[self.env.ref('your_module_name.view_id').id, 'form']],
+            # Replace 'your_module_name' and 'view_id' with the actual values
+            'target': 'new',
+            'res_model': 'bon.show',
+            'context': {},
+            'domain': [('id', 'in', tt)]
+        }
+
+    def move_next(self, ids):
+        current = self.env['project.task.work'].browse(ids[0])
+
+        return {
+            'name': ('Actions Workflow'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'form',
+            'target': 'new',
+            'res_model': 'base.flow.merge.automatic.wizard',
+            'context': {
+                'default_project_id': current.project_id.id,
+                'default_date_start_r': fields.Date.today(),
+                'default_zone': current.zone,
+                'default_secteur': current.secteur,
+            },
+            'domain': [],
+        }
+
+    def action_copy(self, default=None):
+        if default is None:
+            default = {}
+        for tt in self:
+            packaging_obj = self.env['project.task.work']
+
+            self.env.cr.execute(
+                'SELECT sequence FROM project_task_work WHERE task_id=%s ORDER BY sequence DESC LIMIT 1',
+                (tt.task_id.id,))
+            res = self.env.cr.fetchone()
+            packaging_obj.write(id[0], {'poteau_t': tt.poteau_t / 2})
+            cte = packaging_obj.create({
+                'project_id': tt.project_id.id,
+                'sequence': res[0] + 1,
+                'task_id': tt.task_id.id,
+                'product_id': tt.product_id.id,
+                'categ_id': tt.categ_id.id,
+                'state_id': tt.state_id.id or False,
+                'city': tt.city or False,
+                'name': tt.name + ' * ',
+                'date_start': tt.date_start,
+                'date_end': tt.date_end,
+                'poteau_t': tt.poteau_t / 2,
+                'poteau_i': tt.poteau_i,
+                'color': tt.color,
+                'hours': tt.hours,
+                'total_t': tt.color * 7,
+                'project_id': tt.task_id.project_id.id,
+                'gest_id': tt.gest_id.id,
+                'uom_id': tt.uom_id.id,
+                'uom_id_r': tt.uom_id_r.id,
+                'ftp': tt.ftp,
+                'zone': tt.zone,
+                'secteur': tt.secteur,
+                'state': 'draft'
+            })
+
+        return cte
+
+    def action_issue(self):
+        current = self[0]
+
+        if current.issue_id:
+            return {
+                'name': 'Gestion des Incidents et Anomalies',
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'res_model': 'project.issue',
+                'res_id': current.issue_id.id,
+                'context': {},
+                'domain': [('work_id', '=', current.id)]
+            }
+        else:
+            return {
+                'name': 'Gestion des Incidents et Anomalies',
+                'type': 'ir.actions.act_window',
+                'view_mode': 'form',
+                'res_model': 'project.issue',
+                'context': {
+                    'default_work_id': current.id,
+                    'default_date_deadline': fields.Date.context_today(self),
+                    'default_employee_id': current.employee_id.id or False,
+                    'default_project_id': current.project_id.id,
+                    'default_task_id': current.task_id.id,
+                    'default_gest_id': current.gest_id.id,
+                    'default_name': current.project_id.number + '-' + str(current.task_id.sequence).zfill(
+                        3) + '-' + str(current.sequence).zfill(3)
+                },
+                'domain': []
+            }
+
+    def action_open_invoice(self):
+        current = self[0]
+
+        tt = []
+        if current.line_ids:
+            for rec_line in current.line_ids:
+                if rec_line.paylist_id:
+                    if rec_line.paylist_id.id not in tt:
+                        tt.append(rec_line.paylist_id.id)
+        return {
+            'name': 'Consultation Facture/F.T',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'tree,form',
+            'target': 'new',
+            'res_model': 'hr.payslip',
+            'context': {},
+            'domain': [('id', 'in', tt)]
+        }
+
+    def action_open1(self):
+
+        return {
+            'name': 'Déclaration des Bons',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'target': 'new',
+            'res_model': 'base.group.merge.automatic.wizard',
+            # 'res_id': self.id,
+            # 'res_id': self.id,
+            'context': {'active_ids': self.ids,
+                        'active_model': self._name,
+                        },
+            'domain': [],
+        }
+
+    @api.model
+    def create(self, values):
+        if 'active_ids' in self.env.context and self.env.context.get('active_model') == 'project.task.work':
+            # If the context contains active_ids and active_model is 'project.task.work',
+            # it means the wizard is being called from the 'project.task.work' model
+            return self.browse(self.env.context['active_ids'])[0]
+        else:
+            return super(TaskWork, self).create(values)
+
 
 class TaskWorkLine(models.Model):
     _name = 'project.task.work.line'
@@ -756,8 +1128,6 @@ class TaskWorkLine(models.Model):
     done3 = fields.Boolean(string='is done')
     done4 = fields.Boolean(string='is done')
     auto = fields.Boolean(string='is done')
-    group_id2 = fields.Many2one('base.group', 'Done by', select="1", readonly=True,
-                                states={'affect': [('readonly', False)]}, )
     facture = fields.Boolean(string='Facture', readonly=True, states={'affect': [('readonly', False)]}, )
     date_inv = fields.Date(string='Date', select="1")
     num = fields.Char(string='Work summary', readonly=True, states={'affect': [('readonly', False)]}, )
@@ -847,16 +1217,21 @@ class TaskWorkLine(models.Model):
                                         wage = ll.amount2
 
                                 else:
-                                    raise UserError(_('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
+                                    raise UserError(
+                                        _('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
                         else:
-                            raise UserError(_('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
+                            raise UserError(
+                                _('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
                     else:
-                        raise UserError(_('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
+                        raise UserError(
+                            _('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
             else:
-                raise UserError(_('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
+                raise UserError(
+                    _('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
 
             if wage == 0:
-                raise UserError(_('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
+                raise UserError(
+                    _('Errour!\nTaux horaire Non Défini pour cette configuration, Veuillez consulter le Superviseur SVP!'))
             if self.uom_id == 5:
                 result['value']['total_r'] = self.hours_r * wage
             else:
@@ -869,9 +1244,14 @@ class ProjectIssueVersion(models.Model):
     works_id = fields.Many2one('project.project', string='Work ID')
 
 
-class BaseGroupMergeAutomaticWizard(models.Model):
-    _name = "base.group.merge.automatic.wizard"
-    name = fields.Char('Name')
+class RiskManagementCategory(models.Model):
+    _inherit = 'risk.management.category'
+    work_id = fields.Many2one('project.task.work', string='Wizard')
+
+
+class LinkLine(models.Model):
+    _inherit = 'link.line'
+    work_id = fields.Many2one('project.task.work', string='Event')
 
 
 class ProjectStatus(models.Model):
@@ -879,15 +1259,6 @@ class ProjectStatus(models.Model):
     _description = 'Project Status'
 
     name = fields.Char(String='Status Permis')
-
-
-class LinkType(models.Model):
-    _name = "link.type"
-
-    work_id = fields.Many2one('project.task.work', string='project ID')
-    ftp = fields.Char()
-    name = fields.Char()
-    source = fields.Char()
 
 
 class HrPayslip(models.Model):
@@ -898,43 +1269,3 @@ class HrPayslip(models.Model):
 class ProjectIssue(models.Model):
     _name = "project.issue"
     name = fields.Char('Name')
-
-
-# class BaseTaskMergeAutomaticWizard(models.Model):
-#     _name = "base.task.merge.automatic.wizard"
-#     name = fields.Char('Name')
-
-
-class BaseGroup(models.Model):
-    _name = "base.group"
-    name = fields.Char('Name')
-
-
-class BaseInvoiceMergeAutomaticWizard(models.Model):
-    _name = "base.invoice.merge.automatic.wizard"
-    name = fields.Char('Name')
-
-
-# class BonShowInherit(models.Model):
-#     _inherit = 'bon.show'
-#
-#     work_id = fields.Many2one('project.task.work', 'Nationality', readonly=True,
-#                               states={'draft': [('readonly', False)]}, )
-#     line_ids = fields.Many2many('project.task.work.line', 'bon_show_project_task_work_line_rel', 'bon_show_id',
-#                                 'project_task_work_line_id', string='Legumes', readonly=True,
-#                                 states={'draft': [('readonly', False)]}, )
-
-#
-# class BonShowLine2Inherit(models.Model):
-#     _inherit = 'bon.show.line2'
-#
-#     work_id = fields.Many2one('project.task.work', string='Nationality')
-#     line_id = fields.Many2one('project.task.work.line', string='Tags')
-#
-#
-# class BonShowLine1Inherit(models.Model):
-#     _inherit = 'bon.show.line1'
-#
-#     work_id = fields.Many2one('project.task.work', string='Task')
-#     line_id = fields.Many2one('project.task.work.line', string='Task')
-#
