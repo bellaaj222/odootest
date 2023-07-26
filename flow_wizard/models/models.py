@@ -157,7 +157,8 @@ class EbMergeflows(models.Model):
                     l2.append(work.secteur)
                 if len(l2) > 1:
                     print("impo4")
-                    raise UserError(_('Action impossible!6'), _("Action possible pour un seul secteur  !"))
+                    raise UserError(_('Action impossible!6\nAction possible pour une seule zone  !'))
+
                 r.append((0, 0, {'work_id': work.id, 'date_start_r': work.date_start, 'date_end_r': work.date_end,
                                  'color1': work.color, 'uom_id_r': work.uom_id.id, 'poteau_t': work.poteau_t,
                                  'gest_id': work.gest_id.id, 'state': work.state
@@ -356,12 +357,12 @@ class EbMergeflows(models.Model):
 
         print("ltask2:", ltask2)
 
-        if ltask2:
-            self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
-        else:
-            self.work_ids = False  # or any other appropriate value # Update work_ids using the 'many2many' format
-
-        print("work_ids:", self.work_ids)
+        # if ltask2:
+        #     self.work_ids = [(6, 0, ltask2)]  # Update work_ids using the 'many2many' format
+        # else:
+        #     self.work_ids = False  # or any other appropriate value # Update work_ids using the 'many2many' format
+        #
+        # print("work_ids:", self.work_ids)
 
         return {'domain': {'work_ids': [('id', 'in', ltask2)]}}
 
@@ -421,14 +422,38 @@ class EbMergeflows(models.Model):
                                         (True, l1.work_id.id))
 
                 res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo_id = None
+                print(wk_histo_id, "1111111111111111111")
+
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
-                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+
+                if not wk_histo:
+                    for item in tt:
+                        work_histo = self.env['work.histo'].create({
+                            'task_id': item.task_id.id,
+                            'categ_id': item.categ_id.id,
+                            'product_id': item.product_id.id,
+                            'name': item.name,
+                            'date': item.date_start,
+                            'create_a': datetime.now(),
+                            'create_by': res_user.employee_id.name,
+                            'zone': item.zone,
+                            'secteur': item.secteur,
+                            'project_id': item.project_id.id,
+                            'partner_id': item.project_id.partner_id.id,
+                        })
+                        wk_histo_id = work_histo.id
+                        print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
+                else:
+                    wk_histo_id = wk_histo.id
+
                 self.env['work.histo.line'].create({
-                    'actions': 'keep',
+                    'actions': 'permis',
                     'type': 'aw',
+                    'execute_by': self.employee_id.name or False,
                     'create_by': res_user.employee_id.name,
                     'work_histo_id': wk_histo_id,
-                    'date': datetime.now(),
+                    'date': fields.Datetime.now(),
                     'coment1': self.note or False,
                     'id_object': self.id,
                 })
@@ -450,15 +475,39 @@ class EbMergeflows(models.Model):
                                         ('pending', l1.work_id.task_id.id))
 
                 res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo_id = None
+                print(wk_histo_id, "1111111111111111111")
+
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
-                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+
+                if not wk_histo:
+                    for item in tt:
+                        work_histo = self.env['work.histo'].create({
+                            'task_id': item.task_id.id,
+                            'categ_id': item.categ_id.id,
+                            'product_id': item.product_id.id,
+                            'name': item.name,
+                            'date': item.date_start,
+                            'create_a': datetime.now(),
+                            'create_by': res_user.employee_id.name,
+                            'zone': item.zone,
+                            'secteur': item.secteur,
+                            'project_id': item.project_id.id,
+                            'partner_id': item.project_id.partner_id.id,
+                        })
+                        wk_histo_id = work_histo.id
+                        print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
+                else:
+                    wk_histo_id = wk_histo.id
+
                 self.env['work.histo.line'].create({
-                    'actions': 'suspend',
+                    'actions': 'permis',
                     'type': 'aw',
+                    'execute_by': self.employee_id.name or False,
                     'create_by': res_user.employee_id.name,
                     'work_histo_id': wk_histo_id,
-                    'date': datetime.now(),
-                    'coment1': this.note or False,
+                    'date': fields.Datetime.now(),
+                    'coment1': self.note or False,
                     'id_object': self.id,
                 })
 
@@ -481,16 +530,39 @@ class EbMergeflows(models.Model):
                     print("work_id is empty or null")
 
                 res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo_id = None
+                print(wk_histo_id, "1111111111111111111")
+
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
-                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
+
+                if not wk_histo:
+                    for item in tt:
+                        work_histo = self.env['work.histo'].create({
+                            'task_id': item.task_id.id,
+                            'categ_id': item.categ_id.id,
+                            'product_id': item.product_id.id,
+                            'name': item.name,
+                            'date': item.date_start,
+                            'create_a': datetime.now(),
+                            'create_by': res_user.employee_id.name,
+                            'zone': item.zone,
+                            'secteur': item.secteur,
+                            'project_id': item.project_id.id,
+                            'partner_id': item.project_id.partner_id.id,
+                        })
+                        wk_histo_id = work_histo.id
+                        print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
+                else:
+                    wk_histo_id = wk_histo.id
+
                 self.env['work.histo.line'].create({
-                    'actions': 'archiv',
+                    'actions': 'permis',
                     'type': 'aw',
-                    'execute_by': this.employee_id.name or False,
+                    'execute_by': self.employee_id.name or False,
                     'create_by': res_user.employee_id.name,
                     'work_histo_id': wk_histo_id,
-                    'date': datetime.now(),
-                    'coment1': this.note or False,
+                    'date': fields.Datetime.now(),
+                    'coment1': self.note or False,
                     'id_object': self.id,
                 })
 
@@ -518,19 +590,41 @@ class EbMergeflows(models.Model):
                                         ('valid', l1.work_id.id))
 
                 res_user = self.env['res.users'].browse(self.env.uid)
+                wk_histo_id = None
+                print(wk_histo_id, "1111111111111111111")
+
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
-                wk_histo_id = self.env['work.histo'].browse(wk_histo).id
-                print(wk_histo_id, "tratedtesttetetststse")
+
+                if not wk_histo:
+                    for item in tt:
+                        work_histo = self.env['work.histo'].create({
+                            'task_id': item.task_id.id,
+                            'categ_id': item.categ_id.id,
+                            'product_id': item.product_id.id,
+                            'name': item.name,
+                            'date': item.date_start,
+                            'create_a': datetime.now(),
+                            'create_by': res_user.employee_id.name,
+                            'zone': item.zone,
+                            'secteur': item.secteur,
+                            'project_id': item.project_id.id,
+                            'partner_id': item.project_id.partner_id.id,
+                        })
+                        wk_histo_id = work_histo.id
+                        print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
+                else:
+                    wk_histo_id = wk_histo.id
+
                 self.env['work.histo.line'].create({
-                    'actions': 'treated',
+                    'actions': 'permis',
                     'type': 'aw',
-                    'execute_by': this.employee_id.name or False,
+                    'execute_by': self.employee_id.name or False,
                     'create_by': res_user.employee_id.name,
                     'work_histo_id': wk_histo_id,
-                    'date': datetime.now(),
-                    'coment1': this.note or False,
+                    'date': fields.Datetime.now(),
+                    'coment1': self.note or False,
                     'id_object': self.id,
-                }),
+                })
 
                 for kk in l1.work_id.line_ids.ids:
                     rec_line = self.env['project.task.work.line'].browse(kk)
