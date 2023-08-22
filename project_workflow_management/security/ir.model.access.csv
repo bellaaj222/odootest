@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access.project.workflow,access_project_workflow,project_workflow_management.model_project_workflow,base.group_user,1,1,1,1
+access.project.workflow.state,access_project_workflow_state,project_workflow_management.model_project_workflow_state,base.group_user,1,1,1,1
+access.project.workflow.transition,access_project_workflow_transition,project_workflow_management.model_project_workflow_transition,base.group_user,1,1,1,1
