@@ -16,6 +16,7 @@
     'auto_install': False,
     'category': 'Uncategorized',
     'licence': 'LGPL-3',
+    "images": ["static/description/banner.png"],
 
     # any module necessary for this one to work correctly
     'depends': ['base', 'project'],
@@ -35,6 +36,10 @@
     # only loaded in demonstration mode
     'demo': [
         'demo/demo.xml',
+    ],
+    "qweb": [
+        "static/src/xml/diagram.xml",
+        "static/src/xml/base.xml",
     ],
     'application': True,
     'sequence': -1000,
