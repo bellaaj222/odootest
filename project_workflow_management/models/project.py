@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields, api, exceptions
 
 
 class Project(models.Model):
@@ -176,3 +176,85 @@ class Task(models.Model):
     #         self.wkf_state_id = wkf_state.exists() and wkf_state.id or False
     #     else:
     #         self.wkf_state_id = False
+    @api.model
+    def _get_default_stage_id(self):
+        if 'default_project_id' not in self.env.context and \
+                'project_id' not in self.env.context:
+            return False
+
+        project_id = self.env.context.get(
+            'default_project_id',
+            self.env.context.get('project_id')
+        )
+
+        project = self.env['project.project'].browse(project_id)
+        if project and project.allow_workflow and project.workflow_id:
+            if not project.workflow_id.default_state_id:
+                raise exceptions.ValidationError(
+                    "Project workflow '%s' has no default state. "
+                    "Please configure the workflow, so that we know what "
+                    "default stage should be" % project.workflow_id.name
+                )
+            return project.workflow_id.default_state_id.stage_id.id
+
+        return False
+
+    @api.model
+    def create(self, vals):
+        project_id = vals.get(
+            'project_id', self.env.context.get('default_project_id', False)
+        )
+        stage_id = self.with_context(
+            default_project_id=project_id
+        )._get_default_stage_id()
+
+        if stage_id:
+            vals['stage_id'] = stage_id
+
+        new = super().create(vals)
+
+        if new.project_id.allow_workflow and new.workflow_id:
+            new.wkf_state_id.apply(new)
+
+        return new
+
+    def write(self, vals):
+        stage_id = vals.get('stage_id', False)
+        if stage_id:
+            withoutw = self.filtered(
+                lambda k: not (k.workflow_id and k.project_id.allow_workflow))
+            if withoutw:
+                super().write(vals)
+
+            withw = self.filtered(
+                lambda k: k.project_id.allow_workflow and k.workflow_id
+            )
+            stage_id = vals.pop('stage_id')
+            for task in withw:
+                task.workflow_id.trigger(task, stage_id)
+            return super().write(vals)
+        else:
+            return super().write(vals)
+
+    def stage_find(self, section_id, domain=None, order='sequence'):
+        if self.project_id and \
+                self.project_id.allow_workflow and self.project_id.workflow_id:
+            if not self.project_id.workflow_id.default_state_id:
+                raise exceptions.ValidationError(
+                    "Project workflow '%s' has no default state. "
+                    "Please configure the workflow, so that we know what "
+                    "default stage should be" % self.project_id.workflow_id.name)
+            return self.project_id.workflow_id.default_state_id.stage_id.id
+        else:
+            if not domain:
+                domain = []
+            return super().stage_find(section_id, domain, order)
+
+    # @api.model
+    # def _get_tracked_fields(self, updated_fields):
+    #     tracked_fields = super()._get_tracked_fields(updated_fields)
+    #
+    #     if 'wkf_stage_id' in tracked_fields:
+    #         del tracked_fields['wkf_stage_id']
+    #
+    #     return tracked_fields
