@@ -19,16 +19,24 @@
     "images": ["static/description/banner.png"],
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'project', ],
-    # 'web_ir_actions_act_multi', 'web_ir_actions_act_view_reload',
-    #
+    'depends': ['base', 'project', 'web', 'generic_request'],
+    'application': True,
+    'sequence': -1000,
 
     # always loaded
-
+    'assets': {
+        'web.assets_backend': [
+            'custom_addons/project_workflow_management/static/src/js/diagram_controller.js',
+            'custom_addons/project_workflow_management/static/src/js/diagram_model.js',
+            'custom_addons/project_workflow_management/static/src/js/diagram_renderer.js',
+            'custom_addons/project_workflow_management/static/src/js/task_workflow.js',
+        ],
+    },
     'data': [
         'security/ir.model.access.csv',
-        # 'views/project_workflow_management.xml',
+        'views/project_workflow_management.xml',
         'views/project_workflow_view.xml',
+        'views/res_config_settings_views.xml',
         # 'views/templates.xml',
         "wizard/workflow_edit_wizard.xml",
         "wizard/workflow_export_wizard.xml",
@@ -37,24 +45,9 @@
         "wizard/workflow_mapping_wizard.xml",
 
     ],
-
-    # only loaded in demonstration mode
-    'demo': [
-        'demo/demo.xml',
-    ],
     'qweb': [
-        "static/src/xml/diagram.xml",
-        "static/src/xml/base.xml",
+        "project_workflow_management/static/src/xml/diagram.xml",
+        "project_workflow_management/static/src/xml/base.xml",
     ],
-    'assets': {
-        'web.assets_backend': [
-            'static/src/js/diagram_controller.js',
-            'static/src/js/diagram_model.js',
-            'static/src/js/diagram_renderer.js',
-            'static/src/js/task_workflow.js',
-        ],
-    },
-    'application': True,
-    'sequence': -1000,
 
 }

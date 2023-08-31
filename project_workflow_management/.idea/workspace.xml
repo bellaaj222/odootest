@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="794e2dfe-cbdf-4b71-be42-555b2400d4a8" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../project_workflow_management.zip" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../web_ir_actions_act_multi.zip" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../web_ir_actions_act_view_reload.zip" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/__manifest__.py" beforeDir="false" afterPath="$PROJECT_DIR$/__manifest__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/project_workflow.py" beforeDir="false" afterPath="$PROJECT_DIR$/models/project_workflow.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/src/js/diagram_model.js" beforeDir="false" afterPath="$PROJECT_DIR$/static/src/js/diagram_model.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/src/xml/base.xml" beforeDir="false" afterPath="$PROJECT_DIR$/static/src/xml/base.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/static/src/xml/diagram.xml" beforeDir="false" afterPath="$PROJECT_DIR$/static/src/xml/diagram.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/views/project_workflow_management.xml" beforeDir="false" afterPath="$PROJECT_DIR$/views/project_workflow_management.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/views/project_workflow_view.xml" beforeDir="false" afterPath="$PROJECT_DIR$/views/project_workflow_view.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../web_ir_actions_act_multi/__manifest__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../web_ir_actions_act_multi/__manifest__.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../web_ir_actions_act_view_reload/__manifest__.py" beforeDir="false" afterPath="$PROJECT_DIR$/../web_ir_actions_act_view_reload/__manifest__.py" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "associatedIndex": 7
+}]]></component>
+  <component name="ProjectId" id="2UQoGx9zK0uiHTmxrBUUbXWMhFP" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.OpenProjectViewOnStart": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "last_opened_file_path": "/home/houssem/odoo15/custom_addons/project_workflow_management"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="794e2dfe-cbdf-4b71-be42-555b2400d4a8" name="Changes" comment="" />
+      <created>1692881072855</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1692881072855</updated>
+    </task>
+    <servers />
+  </component>
+</project>

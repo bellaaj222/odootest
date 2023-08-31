@@ -14,4 +14,10 @@
         "views/web_ir_actions_act_view_reload.xml",
     ],
     "installable": True,
+    'assets': {
+        "web.assets_backend": [
+            "/web_ir_actions_act_view_reload/views/web_ir_actions_act_view_reload.xml",
+        ],
+    },
+
 }

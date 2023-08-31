@@ -9,9 +9,14 @@
     "license": "LGPL-3",
     "author": "Modoolar, Odoo Community Association (OCA)",
     "website": "https://github.com/OCA/web/",
-    "depends": ["web"],
+    "depends": ["web", "website_profile"],
     "data": [
         "views/web_ir_actions_act_multi.xml",
     ],
     "installable": True,
+    'assets': {
+        'web.assets_backend': [
+            '/web_ir_actions_act_multi/views/web_ir_actions_act_multi.xml',
+        ],
+    },
 }

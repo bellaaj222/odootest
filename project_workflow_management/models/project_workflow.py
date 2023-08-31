@@ -1,6 +1,7 @@
 from odoo import models, fields, api, exceptions, _
 from odoo.tools.safe_eval import safe_eval
 
+
 class Workflow(models.Model):
     _name = 'project.workflow'
     _description = 'Project Workflow'
@@ -46,7 +47,8 @@ class Workflow(models.Model):
         inverse_name='workflow_id',
         string='States',
         copy=True,
-        help="The list of all possible states a task can be in."
+        help="The list of all possible states a task can be in.",
+        editable=True,  # Add this line to make the field editable
     )
     stage_ids = fields.Many2many(
         'project.task.type',
@@ -72,6 +74,24 @@ class Workflow(models.Model):
         string='Original',
         related='original_id.name',
         readonly=True,
+    )
+
+    type = fields.Selection([
+        ('todo', 'To Do'),
+        ('in_progress', 'In Progress'),
+        ('done', 'Done')
+    ], string='Type')
+
+    # src_id = fields.Many2one(
+    #     'project.workflow.state',
+    #     string='Source Stage',
+    #     index=True,
+    #     ondelete="cascade",
+    # )
+    dst_id = fields.Many2one(
+        'project.workflow.state',
+        string='Destination Stage',
+
     )
 
     @api.depends('state_ids')
@@ -203,13 +223,33 @@ class Workflow(models.Model):
         )
         return wizard.button_export()
 
+    def open_diagram_view(self):
+        action = self.env.ref('project_workflow_management.project_workflow_diagram_edit_action')
+        ctx = self.env.context.copy()
+        ctx['active_id'] = self.id
+        ctx['active_ids'] = [self.id]
+        action['res_id'] = self.id
+        action['context'] = ctx
+        return action
+
+    def action_project_workflow_open_diagram(self):
+        return {
+            'name': 'Edit Diagram',
+            'res_model': 'project.workflow',
+            'view_mode': 'diagram_plus',
+            'view_id': self.env.ref('project_workflow_management.view_project_workflow_diagram').id,
+            # Change to your actual view ID
+            'target': 'current',
+            'type': 'ir.actions.act_window',
+        }
+
     def edit_workflow(self):
+        print("Debug: Entering edit_workflow method")  # Ajoutez ceci pour indiquer le début de la méthode
         self.ensure_one()
 
         edit = self
-
         if self.is_live():
-            if not self.edit_ids:
+            if len(self.edit_ids) == 0:
                 edit = self.copy({
                     'name': _("Draft Version of '%s'") % self.name,
                     'state': 'draft',
@@ -219,18 +259,49 @@ class Workflow(models.Model):
             else:
                 edit = self.edit_ids[0]
 
-        action = self.env['ir.actions.act_window'].for_xml_id(
-            'project_workflow_management',
-            'project_workflow_diagram_edit_action'
-        )
+        action = self.env.ref('project_workflow_management.project_workflow_diagram_edit_action')
 
-        ctx = safe_eval(action['context'])
+        ctx = self.env.context.copy()
         ctx['active_id'] = edit.id
         ctx['active_ids'] = [edit.id]
         action['res_id'] = edit.id
+
         action['context'] = ctx
 
+        print("Debug: Exiting edit_workflow method with action:",
+              action)  # Ajoutez ceci pour indiquer la fin de la méthode
         return action
+
+    # def edit_workflow(self):
+    #     print("Debug: Entering edit_workflow method")  # Ajoutez ceci pour indiquer le début de la méthode
+    #     self.ensure_one()
+    #
+    #     edit = self
+    #     print("test")
+    #     if len(self.edit_ids) == 0:
+    #         edit = self.copy({
+    #             'name': _("Draft Version of '%s'") % self.name,
+    #             'state': 'draft',
+    #             'default_state_id': self.default_state_id.id,
+    #             'original_id': self.id
+    #         })
+    #         print("eeeeeeddddddeeeeeeeeeeeeeee", edit)
+    #     else:
+    #         edit = self.edit_ids[0]
+    #         print("eeeeeeeeeeeeeeeeeeeee", edit)
+    #
+    #     action = self.env.ref('project_workflow_management.project_workflow_diagram_edit_action')
+    #
+    #     ctx = self.env.context.copy()
+    #     ctx['active_id'] = edit.id
+    #     ctx['active_ids'] = [edit.id]
+    #     action['res_id'] = edit.id
+    #
+    #     action['context'] = ctx
+    #
+    #     print("Debug: Exiting edit_workflow method with action:",
+    #           action)  # Ajoutez ceci pour indiquer la fin de la méthode
+    #     return action
 
     def publish_workflow(self):
         self.ensure_one()

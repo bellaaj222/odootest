@@ -14,12 +14,13 @@
                     <t t-call="TaskWorkflowNavigation.content.button"/>
                 </li>
             </ul>
-            <button type="button" class="btn btn-sm o_arrow_button btn-default dropdown-toggle" data-toggle="dropdown">More <span class="caret"/></button>
+            <button type="button" class="btn btn-sm o_arrow_button btn-default dropdown-toggle" data-toggle="dropdown">More <span
+                    class="caret"/></button>
         </t>
     </t>
     <t t-name="TaskWorkflowNavigation.content.button">
         <button type="button" t-att-data-value="i.id"
-            t-attf-class="btn btn-sm  btn-default">
+                t-attf-class="btn btn-sm  btn-default">
             <t t-esc="i.name"/>
         </button>
     </t>
