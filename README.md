@@ -1,1 +1,2 @@
-Merci de ne pas installer les modules autre que 'project' sauf en cas de besoin
+BRANCH (Main) : Optimisation || 
+BRANCH (Migrate) : Version Beta

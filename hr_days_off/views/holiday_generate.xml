@@ -1,0 +1,38 @@
+<odoo>
+    <data>
+
+        <record id="view_holiday_generate_wizard" model="ir.ui.view">
+            <field name="name">training.holiday.year.wizard.wizard</field>
+            <field name="model">training.holiday.year.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Generate Week-End">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="year" string="Année"/>
+                            </group>
+                            <separator colspan="2"/>
+                            <group colspan="2" col="2">
+                                <button name="action_cancel" type="object" string="Annuler" icon="fa-light fa-xmark"/>
+                                <button name="action_apply" type="object" string="Générer" icon="fa-light fa-check"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_holiday_generate" model="ir.actions.act_window">
+            <field name="name">Générer Les Weekends</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">training.holiday.year.wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+            <field name="context">{}</field>
+        </record>
+
+        <menuitem id="menu_weekend_wizard" name="Générer les Weekends" sequence="30"
+                  parent="project_custom.menu_gest_weekend" action="action_holiday_generate"/>
+
+    </data>
+</odoo>

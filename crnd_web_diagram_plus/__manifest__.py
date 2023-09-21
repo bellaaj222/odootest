@@ -10,7 +10,7 @@
     'license': 'LGPL-3',
     'version': '15.0.0.10.0',
     'depends': [
-        'web',
+        'web', 'flow_wizard','project_custom'
     ],
     'assets': {
         'web.assets_qweb': [
@@ -31,6 +31,16 @@
             'crnd_web_diagram_plus/static/tests/diagram_tests.js',
         ],
     },
+    'data': [
+        'security/ir.model.access.csv',
+        'views/popover_widget.xml',
+        'views/inherit.xml',
+        'views/web_diagram_plus.xml',
+        'views/web_diagram_plus_arrow.xml',
+        'views/web_diagram_plus_node.xml',
+
+
+    ],
     'images': ['static/description/banner.png'],
     'installable': True,
     'auto_install': False,

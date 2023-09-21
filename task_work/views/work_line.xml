@@ -1,0 +1,83 @@
+<odoo>
+
+    <record id="view_work_line_tree" model="ir.ui.view">
+        <field name="name">work.line.tree</field>
+        <field name="model">project.task.work.line</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="state == 'affect'" decoration-danger="state == 'cancel'"
+                  decoration-primary="state == 'valid'">
+                <field name="work_id" invisible="1"/>
+                <field name="date" invisible="0" string="Date"/>
+                <field name="project_id" string="Projet"/>
+                <field name="sequence" invisible="0" string="Seq"/>
+                <field name="date_start_r" string="Date Début" widget="date"
+                       attrs="{'required': [('state', '=', 'affect')]}"/>
+                <field name="date_end_r" string="Date Fin" widget="date"
+                       attrs="{'required': [('state', '=', 'draft')]}"/>
+                <field name="employee_id" invisible="0" string="Employee"/>
+                <field name="product_id" invisible="0" string="Type Service"/>
+                <field name="zone" invisible="0" string="Zone"/>
+                <field name="secteur" invisible="0" string="Secteur"/>
+                <field name="color1" string="Durée(Jours)" attrs="{'required': [('state', '=', 'draft')]}"
+                       sum="Prev Hours"/>
+                <field name="hours_r" string="Durée(Heurs)" attrs="{'required': [('state', '=', 'draft')]}"
+                       widget="float_time" sum="Prev Hours" readonly="0"/>
+                <field name="poteau_r" string="Qté/Unité" attrs="{'required': [('state', '=', 'draft')]}"
+                       sum="Prev Hours"
+                       readonly="0"/>
+                <field name="uom_id_r" string="Unité" attrs="{'required': [('state', '=', 'draft')]}"
+                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                <field name="task_id" invisible="1"/>
+                <field name="ftp" string="Ftp" placeholder="Description..." invisible="1"/>
+                <field name="state" invisible="1" readonly="1" string="Etat"/>
+                <field name="done3" string="Controlé?" placeholder="Description..."/>
+                <field name="done2" string="Groupé?" placeholder="Description..." readonly="1" invisible="1"/>
+                <field name="done" string="Validé?" placeholder="Description..." readonly="1" invisible="1"/>
+                <field name="is_super_admin" invisible="1"/>
+                <field name="done1" string="Facturé?" placeholder="Description..." readonly="1"/>
+                <field name="facture" string="Facturation CLT?"
+                       attrs="{'invisible': [('is_super_admin', '=', False)]}"/>
+                <field name="num" string="Num Fact" attrs="{'invisible': [('is_super_admin', '=', False)]}"/>
+                <field name="date_inv" string="Date Facture" attrs="{'invisible': [('is_super_admin', '=', False)]}"/>
+                <button name="open_invoice_cust" string="Fiche Validé" type="object" icon="STOCK_NEW"
+                        attrs="{'invisible': [('facture', '=', False)]}"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_work_line_search" model="ir.ui.view">
+            <field name="name">work.line.search</field>
+            <field name="model">project.task.work.line</field>
+            <field name="arch" type="xml">
+                <search string="Tasks">
+                    <field name="name" string="Task"/>
+                    <field string="Project" name="project_id"/>
+                    <field name="partner_id" operator="child_of"/>
+                    <group expand="0" string="Group By">
+                        <filter string="Project" name="project" context="{'group_by': 'project_id'}"/>
+                        <filter string="Creation Date" name="group_create_date" context="{'group_by': 'create_date'}"/>
+                    </group>
+                    <searchpanel view_types="tree,kanban">
+                        <field name="partner_id" icon="fa-building" hierarchize="1" enable_counters="1"/>
+                        <field name="project_id" icon="fa-building" enable_counters="1" select="multi" hierarchize="1"
+                               domain="[('partner_id', '=', partner_id)]"/>
+                        <field name="categ_id" icon="fa-building" enable_counters="1" hierarchize="1"/>
+                        <field name="product_id" icon="fa-building" enable_counters="1" select="multi"
+                               domain="[('categ_id', '=', categ_id)]"/>
+                        <field name="state" icon="fa-users" enable_counters="1"/>
+                    </searchpanel>
+                </search>
+            </field>
+        </record>
+
+    <record id="action_work_line" model="ir.actions.act_window">
+        <field name="name">Bons à Facturer</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">project.task.work.line</field>
+        <field name="view_mode">tree</field>
+        <field name="context">{}</field>
+        <field name="view_ids"
+               eval="[(5, 0, 0), (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_work_line_tree')})]"/>
+    </record>
+
+</odoo>

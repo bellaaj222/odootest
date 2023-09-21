@@ -1,0 +1,26 @@
+<odoo>
+    <data>
+
+        <record id="view_holiday_categ_tree" model="ir.ui.view">
+            <field name="name">training.holidays.category.tree</field>
+            <field name="model">training.holidays.category</field>
+            <field name="arch" type="xml">
+                <tree string="Holiday Category" editable="bottom">
+                    <field name="name" string="Catégories des Congés et J.F"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_holiday_categ" model="ir.actions.act_window">
+            <field name="name">Catégories des Congés et J.F</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">training.holidays.category</field>
+            <field name="view_mode">tree</field>
+            <field name="context">{}</field>
+        </record>
+
+    <menuitem id="menu_holiday_categ" name="Types et Catégories des Congés et J.F" sequence="10"
+              parent="project_custom.menu_gest_weekend" action="action_holiday_categ"/>
+
+    </data>
+</odoo>

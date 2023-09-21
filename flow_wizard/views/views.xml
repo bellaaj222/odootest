@@ -71,8 +71,9 @@
                                     <field name="categ_id" string="Département"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                            required="1"/>
-
-
+                                    <field name="web_diagram_id"/>
+                                    <field name="from_node_id"/>
+                                    <field name="to_node_id"/>
                                     <field name="done" string="Taches de Corrections?"
                                            help="Coché pour les taches de controles"/>
                                     <field name="zone" string="Zone?" help="Ignoré si =0"/>
@@ -87,7 +88,7 @@
 
                                     <button name="button_affect" type="object" string="Affect. Ressource"
                                             class="oe_highlight" confirm="Voulez-vous affecter les ressources?"
-                                            icon="fa-user" attrs="{'invisible': [('state', '=', 'draft')]}"/>
+                                            icon="terp-personal" attrs="{'invisible': [('state', '=', 'draft')]}"/>
 
 
                                 </group>
@@ -108,7 +109,7 @@
                                     <field name="employee_ids" string="A" widget='many2many_tags'
                                            options="{'no_create': True}"/>
                                     <newline/>
-                                    <button name="button_load_mail" type="object"  icon="fa-paper-plane"
+                                    <button name="button_load_mail" type="object" string="" icon="gtk-leave-fullscreen"
                                             class="btn-primary"/>
                                     <newline/>
 
@@ -205,7 +206,6 @@
         <field name="name">action.workflow.tree</field>
         <field name="model">base.flow.merge.automatic.wizard</field>
         <field name="arch" type="xml">
-
             <tree default_order='create_date desc'>
                 <field name="create_date" string="Date Action"/>
                 <field name="id" invisible="1"/>
@@ -229,6 +229,7 @@
         <field name="res_model">base.flow.merge.automatic.wizard</field>
         <field name="view_mode">tree,form</field>
     </record>
-    <menuitem id="menu_action_workflow" name="Actions WorkFlow" sequence="0" action="action_work_flow"/>
+    <menuitem id="menu_action_workflow" name="Actions WorkFlow" sequence="70" parent="project_custom.menu_project"
+              action="action_work_flow"/>
 
 </odoo>

@@ -1,2 +1,0 @@
-- Add field `active` to model request.request.
-- Add a group whose users are allowed to archive / unarchive requests.

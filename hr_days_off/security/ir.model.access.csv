@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access.training.holiday.year,access_training_holiday_year,hr_days_off.model_training_holiday_year,base.group_user,1,1,1,1
+access.training.holiday.year.wizard,access_training_holiday_year_wizard,hr_days_off.model_training_holiday_year_wizard,base.group_user,1,1,1,1
+access.training.holiday.period,access_training_holiday_period,hr_days_off.model_training_holiday_period,base.group_user,1,1,1,1
+access.training.holidays.category,access_training_holidays_category,hr_days_off.model_training_holidays_category,base.group_user,1,1,1,1
