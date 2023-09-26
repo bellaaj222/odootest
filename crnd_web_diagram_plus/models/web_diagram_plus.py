@@ -13,7 +13,7 @@ class WebDiagramPlus(models.Model):
     node_ids = fields.One2many(
         'web.diagram.plus.node', 'web_diagram_id', string='Nodes', copy=True)
     arrow_ids = fields.One2many(
-        'base.flow.merge.automatic.wizard', 'web_diagram_id', string='Arrows', copy=True)
+        'web.diagram.plus.arrow', 'web_diagram_id', string='Arrows', copy=True)
 
     @api.model
     def get_action_by_xmlid(self, xmlid, context=None, domain=None):
@@ -46,52 +46,39 @@ class WebDiagramPlusNode(models.Model):
     _name = 'web.diagram.plus.node'
     _description = 'Web Diagram Plus Node'
 
-    name = fields.Char(required=True)
+    name = fields.Many2one('product.category', required=True)
 
     web_diagram_id = fields.Many2one(
-        'web.diagram.plus', 'Web Diagram', ondelete='cascade',
+        'web.diagram.plus', 'Project Diagram', ondelete='cascade',
         required=True, index=True)
 
     res_bg_color = fields.Char(
-        default=DEFAULT_BG_COLOR, string="Background Color")
+        default=DEFAULT_BG_COLOR, string="Backgroung Color")
     res_label_color = fields.Char(
         default=DEFAULT_LABEL_COLOR)
 
     arrow_in_ids = fields.One2many(
-        'base.flow.merge.automatic.wizard', 'to_node_id', 'Incoming Arrows')
+        'web.diagram.plus.arrow', 'to_node_id', 'Incoming Arrows')
     arrow_out_ids = fields.One2many(
-        'base.flow.merge.automatic.wizard', 'from_node_id', 'Outgoing Arrows')
+        'web.diagram.plus.arrow', 'from_node_id', 'Outgoing Arrows')
+
     diagram_position = fields.Text()
 
 
-# class WebDiagramPlusArrow(models.Model):
-#     _name = 'web.diagram.plus.arrow'
-#     _description = 'Web Diagram Plus Arrow'
-#
-#     name = fields.Char(required=True)
-#
-#     web_diagram_id = fields.Many2one(
-#         'web.diagram.plus', 'Web Diagram', ondelete='cascade',
-#         required=True, index=True, tracking=True)
-#
-#     from_node_id = fields.Many2one(
-#         'web.diagram.plus.node', 'From', ondelete='cascade',
-#         required=True, index=True, tracking=True)
-#     to_node_id = fields.Many2one(
-#         'web.diagram.plus.node', 'To', ondelete='restrict',
-#         required=True, index=True)
+class WebDiagramPlusArrow(models.Model):
+    _name = 'web.diagram.plus.arrow'
+    _description = 'Web Diagram Plus Arrow'
+
+    name = fields.Many2one('base.flow.merge.automatic.wizard',required=True , string='Action')
 
 
-# class CustomProjectTask(models.Model):
-#     # _name = 'web.diagram.plus.arrow'
-#     _inherit = 'base.flow.merge.automatic.wizard'
-#     name = fields.Char(required=True)
-#     web_diagram_id = fields.Many2one(
-#         'web.diagram.plus', 'Web Diagram', ondelete='cascade',
-#         required=True, index=True, tracking=True)
-#     from_node_id = fields.Many2one(
-#         'product.category', 'From', ondelete='restrict',
-#         required=False, index=True, tracking=True)
-#     to_node_id = fields.Many2one(
-#         'product.category', 'To', ondelete='restrict',
-#         required=False, index=True)
+    web_diagram_id = fields.Many2one(
+        'web.diagram.plus', 'Web Diagram', ondelete='cascade',
+        required=True, index=True, tracking=True)
+
+    from_node_id = fields.Many2one(
+        'web.diagram.plus.node', 'Department source', ondelete='restrict',
+        required=True, index=True, tracking=True)
+    to_node_id = fields.Many2one(
+        'web.diagram.plus.node', 'Department destination', ondelete='restrict',
+        required=True, index=True)

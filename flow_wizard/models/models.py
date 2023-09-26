@@ -272,16 +272,16 @@ class EbMergeflows(models.Model):
                           states={'draft': [('readonly', False)]}, )  ##, default=_disponible
     ##doctor = fields.Boolean(string='Is doctor?', default=default_done)
     color1 = fields.Integer(string='Assigned')
-    name = fields.Char(required=True)
-    web_diagram_id = fields.Many2one(
-        'web.diagram.plus', 'Web Diagram', ondelete='cascade',
-        required=True, index=True, tracking=True)
-    from_node_id = fields.Many2one(
-        'product.category', 'From', ondelete='restrict',
-        required=False, index=True, tracking=True)
-    to_node_id = fields.Many2one(
-        'product.category', 'To', ondelete='restrict',
-        required=False, index=True)
+    # name = fields.Char(required=True)
+    # web_diagram_id = fields.Many2one(
+    #     'web.diagram.plus', 'Web Diagram', ondelete='cascade',
+    #     required=True, index=True, tracking=True)
+    # from_node_id = fields.Many2one(
+    #     'product.category', 'From', ondelete='restrict',
+    #     required=False, index=True, tracking=True)
+    # to_node_id = fields.Many2one(
+    #     'product.category', 'To', ondelete='restrict',
+    #     required=False, index=True)
 
     uom_id_r = fields.Many2one('product.uom', string='uom_id_r')
     uom_id = fields.Many2one('product.uom', string='uom_id')
