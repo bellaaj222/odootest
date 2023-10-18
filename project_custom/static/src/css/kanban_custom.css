@@ -1,9 +1,10 @@
 /* Add custom styles to the button */
 .oe_kanban_button_custom {
-    background-color: #89C6D0; /* Dark violet color */
-    color: #000; /* Black text color */
+    background-color: #8167bd;  /* Dark violet color */
+    color: #FFF; /* White text color */
     border-radius: 5px;
-    font-size: 16px;
+    font-size: 12px;
+    border: solid transparent;
     cursor: pointer;
     position: relative; /* Use relative positioning */
     display: block; /* Make it a block element */
@@ -14,5 +15,6 @@
 
 /* Style the button on hover */
 .oe_kanban_button_custom:hover {
-    background-color: #CAA9A1; /* Darker violet color on hover */
+    background-color: #7f55df; /* Darker violet color on hover */
+     color: #FFF;
 }

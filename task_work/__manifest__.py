@@ -32,6 +32,7 @@
         'views/status.xml',
         'views/employes_intervenant.xml',
         'views/work_line.xml',
+        'views/liste_task_work.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

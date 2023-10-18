@@ -28,6 +28,7 @@
         'security/security.xml',
         'data/account_tax.xml',
         'views/project.xml',
+        'views/planning.xml',
         'views/template.xml',
         'views/template_gest.xml',
         'views/not_kit.xml',

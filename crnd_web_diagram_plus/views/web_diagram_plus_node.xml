@@ -3,7 +3,7 @@
         <field name="model">web.diagram.plus.node</field>
         <field name="arch" type="xml">
             <tree>
-                <field name="name"/>
+                <field name="categ"/>
                 <field name="web_diagram_id"/>
                 <field name="arrow_in_ids"/>
                 <field name="arrow_out_ids"/>
@@ -17,7 +17,7 @@
                 <sheet>
                     <group>
                         <group>
-                            <field name="name"/>
+                            <field name="categ"/>
                             <field name="web_diagram_id"/>
                         </group>
                         <group>

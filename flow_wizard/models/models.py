@@ -272,16 +272,6 @@ class EbMergeflows(models.Model):
                           states={'draft': [('readonly', False)]}, )  ##, default=_disponible
     ##doctor = fields.Boolean(string='Is doctor?', default=default_done)
     color1 = fields.Integer(string='Assigned')
-    # name = fields.Char(required=True)
-    # web_diagram_id = fields.Many2one(
-    #     'web.diagram.plus', 'Web Diagram', ondelete='cascade',
-    #     required=True, index=True, tracking=True)
-    # from_node_id = fields.Many2one(
-    #     'product.category', 'From', ondelete='restrict',
-    #     required=False, index=True, tracking=True)
-    # to_node_id = fields.Many2one(
-    #     'product.category', 'To', ondelete='restrict',
-    #     required=False, index=True)
 
     uom_id_r = fields.Many2one('product.uom', string='uom_id_r')
     uom_id = fields.Many2one('product.uom', string='uom_id')
@@ -662,22 +652,22 @@ class EbMergeflows(models.Model):
                 wk_histo = self.env['work.histo'].search([('work_id', '=', l1.work_id.id)])
 
                 if not wk_histo:
-                    for item in tt:
-                        work_histo = self.env['work.histo'].create({
-                            'task_id': item.task_id.id,
-                            'categ_id': item.categ_id.id,
-                            'product_id': item.product_id.id,
-                            'name': item.name,
-                            'date': item.date_start,
-                            'create_a': datetime.now(),
-                            'create_by': res_user.employee_id.name,
-                            'zone': item.zone,
-                            'secteur': item.secteur,
-                            'project_id': item.project_id.id,
-                            'partner_id': item.project_id.partner_id.id,
-                        })
-                        wk_histo_id = work_histo.id
-                        print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
+                  for item in tt:
+                    work_histo = self.env['work.histo'].create({
+                        'task_id': item.task_id.id,
+                        'categ_id': item.categ_id.id,
+                        'product_id': item.product_id.id,
+                        'name': item.name,
+                        'date': item.date_start,
+                        'create_a': datetime.now(),
+                        'create_by': res_user.employee_id.name,
+                        'zone': item.zone,
+                        'secteur': item.secteur,
+                        'project_id': item.project_id.id,
+                        'partner_id': item.project_id.partner_id.id,
+                    })
+                    wk_histo_id = work_histo.id
+                    print(wk_histo.id, "gggggggggggggggggggggggggggggggggggg")
                 else:
                     wk_histo_id = wk_histo.id
 

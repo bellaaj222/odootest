@@ -56,7 +56,7 @@
 
 /* Style the button icon for affect_ctrl button */
 .oe_kanban_button_affect_ctrl::before {
-    content: "\f002"; /* Unicode character for the "users" icon */
+    content: "\f0c0"; /* Unicode character for the "users" icon */
     font-family: FontAwesome; /* Assuming you're using FontAwesome for icons */
     margin-left: 5px; /* Add space between icon and text */
 }
@@ -77,9 +77,9 @@
 
 /* Style the button icon for affect_ctrl button */
 .oe_kanban_button_affect_corr::before {
-    content: "\f0ad"; /* Unicode character for the "users" icon */
-    font-family: FontAwesome; /* Assuming you're using FontAwesome for icons */
-    margin-left: 5px; /* Add space between icon and text */
+     content: "\f0c0"; /* Unicode character for the "users" icon */
+     font-family: FontAwesome; /* Assuming you're using FontAwesome for icons */
+     margin-left: 5px; /* Add space between icon and text */
 }
 
 
@@ -109,7 +109,7 @@
 
 /* Style the Kanban Field Box */
 .kanban_stage_prod {
-    background-color: #3498db; /* Change the background color as desired */
+    background-color: #b6d9f1; /* Change the background color as desired */
     color: #373232; /* Text color */
     border-radius: 5px; /* Rounded corners */
     padding: 2px 5px; /* Adjust padding for spacing */

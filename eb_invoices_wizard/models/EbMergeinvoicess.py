@@ -15,6 +15,8 @@ class EbMergeInvoices(models.Model):
         active_ids = self.env.context.get('active_ids')
         active_model = self.env.context.get('active_model')
 
+        print('self.env.context :', self.env.context)
+
         if active_model != 'project.task.work':
             if active_model == 'base.group.merge.automatic.wizard':
                 tt = self.env['base.group.merge.automatic.wizard'].browse(active_ids)
@@ -821,7 +823,7 @@ class EbMergeInvoices(models.Model):
             'active': True,
             'sequence': work.sequence,
             'gest_id3': work.gest_id3.id,
-            'state': 'affect',
+            'state': 'draft',
             'work_id': work.id,
             'date_start_r': work.date_start_r,
             'date_end_r': work.date_end_r,
@@ -834,8 +836,7 @@ class EbMergeInvoices(models.Model):
             'secteur': work.secteur,
             'create_explicitly': True,
             'work_group_id': new_work_group_id,
-            'to_duplicate': to_duplicate,
-            'pos': work.pos
+            'to_duplicate': to_duplicate
         })
         return new_work.id
 
@@ -883,8 +884,7 @@ class EbMergeInvoices(models.Model):
 
     def get_product(self, rec):
 
-        # TODO : a changer 80
-        product = 47
+        product = 80
         if rec.categ_id.id == 3:
             product = 156
         elif rec.categ_id.id == 1:
@@ -1072,15 +1072,15 @@ class EbMergeInvoices(models.Model):
 
         for work_id in this.work_ids:
             line = project_task_work.browse(work_id.id)
-            # if this.employee_id2 and this.types_affect == 'intervenant' and line.state == 'draft':
-            #     line.write({'state': 'affect'})
+            if this.employee_id2 and this.types_affect == 'intervenant' and line.state == 'draft':
+                line.write({'state': 'affect'})
             for line_id in line.ids:
                 wk = project_task_work.browse(line_id)
                 wk_histo = self.env['work.histo'].search([('work_id', '=', line_id)])
 
-                if this.employee_id2 and this.types_affect == 'intervenant' and this.state == 'draft':
+                if this.employee_id2 and this.types_affect == 'intervenant':
                     if wk.state == 'draft':
-                        wk.write({'state': 'affect', 'state_prod': 'affect'})
+                        wk.write({'state': 'affect'})
                         self.create_histo_affect(this.employee_id2, this.types_affect,
                                                  fields.Date.today(), wk.id)
                     wk.write({

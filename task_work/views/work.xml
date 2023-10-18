@@ -22,6 +22,7 @@
                     <field name="date_start"/>
                     <field name="date_end"/>
                     <field name="color"/>
+                    <field name="nature_tache"/>
                     <field name="employee_ids_production"/>
                     <field name="employee_ids_controle"/>
                     <field name="employee_ids_correction"/>
@@ -101,14 +102,16 @@
                                 <div class="button_container">
                                     <button name="view_product" string="Liste des Services" type="object"
                                             class="oe_kanban_button_info"/>
-                                    <button name="action_affect" string="Affecter Production" type="object"
+
+
+                                    <button name="action_affect_production" string="Affecter Production" type="object"
                                             class="oe_kanban_button_affect"/>
-<!--                                    <button name="action_affect_ctrl" string="Affecter Contrôle" type="object"-->
-<!--                                            class="oe_kanban_button_affect_ctrl"-->
-<!--                                            attrs="{'invisible':[('state_prod','!=','valid')]}"/>-->
-<!--                                    <button name="action_affect_corr" string="Affecter Correction" type="object"-->
-<!--                                            class="oe_kanban_button_affect_corr"-->
-<!--                                            attrs="{'invisible':[ '|' ,('state_prod','!=','valid'),('stage','=','prod')]}"/>-->
+                                    <button name="action_affect_controle" string="Affecter Contrôle" type="object"
+                                            class="oe_kanban_button_affect_ctrl"/>
+                                    <button name="action_affect_correction" string="Affecter Correction" type="object"
+                                            class="oe_kanban_button_affect_corr"
+                                    />
+                                    <!--                                    attrs="{'invisible':[ '|' ,('state_prod','!=','valid'),('stage','=','prod')]}"-->
 
                                 </div>
 
@@ -117,6 +120,87 @@
                         </t>
                     </templates>
                 </kanban>
+            </field>
+        </record>
+        <record id="view_task_timeline" model="ir.ui.view">
+            <field name="model">project.task.work</field>
+            <field name="type">timeline</field>
+            <field name="arch" type="xml">
+                <timeline date_start="date_start"
+                          date_stop="date_end"
+                          project_id="project_id"
+                          string="Tasks"
+                          default_group_by="project_id"
+                          event_open_popup="true"
+                          zoomKey="ctrlKey"
+                          colors="#959291:state == 'draft';
+                                    #5e98e3:state == 'affect';
+                                    #5e98e3:state =='tovalid';
+                                    #5e98e3:state =='validprod';
+                                    #ecf161:state == 'affect_con';
+                                    #ecf161:state =='tovalidcont';
+                                    #ecf161:state =='validcont';
+                                    #5ee378:state == 'affect_corr'
+                                    #5ee378:state =='tovalidcorrec';
+                                    #5ee378:state =='validcorrec'">
+                    <field name="name"/>
+                    <field name="employee_ids_production"/>
+                    <field name="employee_ids_controle"/>
+                    <field name="employee_ids_correction"/>
+                    <field name="product_id"/>
+
+                    <templates>
+                        <div t-name="timeline-item">
+                            <span>
+                                <div t-esc="record.name"/>
+
+                                <div>
+                                    <t t-foreach="record.employee_ids_production" t-as="employee">
+                                        <img
+                                                t-if="record.employee_ids_production"
+                                                t-attf-src="/web/image/hr.employee/#{employee}/image_128/16x16"
+                                                t-att-title="record.employee"
+                                                width="16"
+                                                height="16"
+                                                class="mr8"
+                                                alt="Employee"
+                                        />
+                                    </t>
+                                </div>
+
+                                <div>
+                                    <t t-foreach="record.employee_ids_controle" t-as="employee">
+                                        <img
+                                                t-if="record.employee_ids_controle"
+                                                t-attf-src="/web/image/hr.employee/#{employee}/image_128/16x16"
+                                                t-att-title="record.employee"
+                                                width="16"
+                                                height="16"
+                                                class="mr8"
+                                                alt="Employee"
+                                        />
+                                    </t>
+                                </div>
+
+                                <div>
+                                    <t t-foreach="record.employee_ids_correction" t-as="employee">
+                                        <img
+                                                t-if="record.employee_ids_correction"
+                                                t-attf-src="/web/image/hr.employee/#{employee}/image_128/16x16"
+                                                t-att-title="record.employee"
+                                                width="16"
+                                                height="16"
+                                                class="mr8"
+                                                alt="Employee"
+                                        />
+                                    </t>
+                                </div>
+                            </span>
+
+                        </div>
+
+                    </templates>
+                </timeline>
             </field>
         </record>
 
@@ -431,8 +515,9 @@
             <field name="name">Tâches</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">project.task.work</field>
-            <field name="view_mode">kanban,tree,calendar,form</field>
-            <field name="domain">[('pos', '=', 1)]</field>
+            <field name="view_mode">kanban,timeline,tree,calendar,form</field>
+            <field name="domain">[('nature_tache', '=', 'prod'), ('pos', '=', 1)]</field>
+
             <field name="context">{}</field>
         </record>
     </data>

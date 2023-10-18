@@ -208,6 +208,9 @@ class ProjectCustom(models.Model):
         for record in self:
             record.is_admin = self.env.user.has_group('project_custom.group_admin')
 
+    web_diagram_id = fields.Many2one(
+        'web.diagram.plus', 'Project Diagram', ondelete='cascade',
+        required=True, index=True)
     is_parent = fields.Boolean(string='Est Parent ?', default=False)
     is_super_admin = fields.Boolean(string='Super Admin', compute='_compute_is_super_admin')
     is_admin = fields.Boolean(string='Is Admin', compute='_compute_is_admin')
@@ -310,7 +313,8 @@ class ProjectCustom(models.Model):
                                states={'draft': [('readonly', False)]}, )
     task_ids2 = fields.One2many('project.task', 'project_id')
     color = fields.Integer(string='Color Index', readonly=True, states={'draft': [('readonly', False)]}, )
-    parent_id = fields.Integer(string='Parent ID', readonly=True, states={'draft': [('readonly', False)]}, )
+    parent_id = fields.Many2one('project.project', string='Parent ID', readonly=True,
+                                states={'draft': [('readonly', False)]}, )
     date = fields.Date(string='date', readonly=True, states={'draft': [('readonly', False)]},
                        default=lambda *a: time.strftime('%Y-%m-%d'), )
     date_start = fields.Date(string='Date de Début', readonly=True, states={'draft': [('readonly', False)]}, copy=True)
@@ -384,6 +388,8 @@ class ProjectCustom(models.Model):
     doc_count = fields.Integer(compute='_get_attached_docs', string='Number of documents attached')
     name = fields.Char(required=False, string='Nom', )
     issue_ids = fields.One2many('project.issue', 'project_id')
+    # recently added :
+    step_count = fields.Integer(string='Nombre Etapes')
 
     _sql_constraints = [
         ('project_date_greater', 'check(date_end >= date_start)',
@@ -401,7 +407,12 @@ class ProjectCustom(models.Model):
     @api.model
     def default_get(self, fields_list):
         res = super(ProjectCustom, self).default_get(fields_list)
-        if 'active_model' in self.env.context:
+        if self.env.context.get('action') == 'planning':
+            print('Planification')
+
+        elif self.env.context.get('action') == 'apply_template':
+            step_ids = self.env.context.get('step_ids')
+            step_count = len(step_ids)
             task_ids = self.env.context.get('task_ids')
             task_records = []
 
@@ -416,8 +427,7 @@ class ProjectCustom(models.Model):
                             'categ_id': kit.categ_id.id,
                             'name': task.name,
                         }))
-
-                res['task_ids'] = task_records
+                res.update({'task_ids': task_records, 'step_count': step_count})
 
         return res
 
@@ -438,7 +448,28 @@ class ProjectCustom(models.Model):
             'domain': []
         }
 
+    def button_planning(self):
+
+        return {
+            'name': 'Planification',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'view_id': self.env.ref('project_custom.project_planning_form').id,
+            'target': 'new',
+            'res_model': 'project.project',
+            'res_id': self.id,
+            'flags': {'initial_mode': 'edit'},
+            'context': {'action': 'planning'},
+            'domain': []
+        }
+
     def button_apply(self):
+
+        step_ids = []
+        for task in self.task_ids:
+            if task.step_id.id not in step_ids:
+                step_ids.append(task.step_id.id)
 
         return {
             'name': 'Utiliser Template',
@@ -449,8 +480,9 @@ class ProjectCustom(models.Model):
             'target': 'current',
             'res_model': 'project.project',
             'flags': {'initial_mode': 'edit'},
-            'context': {'active_model': self._name,
-                        'task_ids': self.task_ids.ids},
+            'context': {'action': 'apply_template',
+                        'task_ids': self.task_ids.ids,
+                        'step_ids': step_ids},
             'domain': []
         }
 
@@ -576,6 +608,20 @@ class ProjectCustom(models.Model):
         self.env.cr.execute('update project_task_work set  state=%s where project_id =%s', ('tovalid', self.ids[0]))
         return True
 
+    def get_nature_tache(self, service):
+
+        if 'correction' in service.name:
+            nature_tache = 'correction'
+        elif u'Contrôle' in service.name:
+            nature_tache = 'Controle'
+        else:
+            nature_tache = 'prod'
+
+        return nature_tache
+
+    def get_position(self, increment):
+        return increment + 1
+
     def set_validate(self):
 
         self.set_compute2()
@@ -601,7 +647,7 @@ class ProjectCustom(models.Model):
                             'name': str(str(project.date.year) + ' - ' + str(str(res1).zfill(3)))})
 
             for task in project.task_ids:
-                i = 1
+                increment = 0
                 if project.date_s:
                     if not task.date_start:
                         task.date_start = project.date_s
@@ -610,9 +656,9 @@ class ProjectCustom(models.Model):
                     if not task.date_end:
                         task.date_end = project.date_e
 
-                if not task.date_start or not task.date_end:
-                    raise UserError(_('Erreur ! Vous devez avoir une date de début et une date de fin pour chaque '
-                                      'tâche ! - %s !') % (task.name))
+                # if not task.date_start or not task.date_end:
+                #     raise UserError(_('Erreur ! Vous devez avoir une date de début et une date de fin pour chaque '
+                #                       'tâche ! - %s !') % (task.name))
 
                 tt = task_obj_line.search([('project_id', '=', project.id), ('task_id', '=', task.id)], order='id')
                 if not tt:
@@ -622,16 +668,19 @@ class ProjectCustom(models.Model):
                                                         'city': project.city})
                     if task.kit_id:
                         for hh in task.kit_id.type_ids.ids:
-                            pr = self.env['product.product'].browse(hh)
-                            if pr.is_load is True:
+                            service = self.env['product.product'].browse(hh)
+                            if service.is_load is True:
+                                nature_tache = self.get_nature_tache(service)
+                                if nature_tache == 'prod':
+                                    increment = self.get_position(increment)
                                 self.env['project.task.work'].create({
                                     'step_id': task.step_id.id,
                                     'task_id': task.id,
                                     'categ_id': task.categ_id.id,
-                                    'product_id': pr.id,
+                                    'product_id': service.id,
                                     'name': task.kit_id.name,
-                                    'date_start': task.date_start,
-                                    'date_end': task.date_end,
+                                    'date_start': task.date_start or False,
+                                    'date_end': task.date_end or False,
                                     'poteau_t': task.qte,
                                     'poteau_i': task.qte,
                                     'color': task.color,
@@ -651,8 +700,8 @@ class ProjectCustom(models.Model):
                                     'coordin_id2': task.coordin_id2.id or False,
                                     'coordin_id3': task.coordin_id3.id or False,
                                     'coordin_id4': task.coordin_id4.id or False,
-                                    'uom_id': pr.uom_id.id,
-                                    'uom_id_r': pr.uom_id.id,
+                                    'uom_id': service.uom_id.id,
+                                    'uom_id_r': service.uom_id.id,
                                     'ftp': task.ftp,
                                     'kit_id': task.kit_id.id,
                                     'state': 'draft',
@@ -662,9 +711,10 @@ class ProjectCustom(models.Model):
                                     'gest_id3': task.coordin_id.id or False,
                                     'current_gest': task.coordin_id.id or False,
                                     'current_sup': task.reviewer_id.id or False,
-                                    'pos': i,
+                                    'pos': increment,
+                                    'nature_tache': nature_tache,
+
                                 })
-                                i += 1
 
                     elif int(task.rank) > 0 and int(task.rank) < 2:
                         if not 'Etape' in task.product_id.name and task.product_id.is_load:
@@ -837,10 +887,10 @@ class ProductStepInherit(models.Model):
                 i = 0
                 if project.parent_id1:
                     exist = self.env['project.task'].search([
-                            ('project_id', '=', project.parent_id1.id),
-                            ('step_id', '=', self.id),
-                            ('kit_id', '=', kit.id)
-                        ]).ids
+                        ('project_id', '=', project.parent_id1.id),
+                        ('step_id', '=', self.id),
+                        ('kit_id', '=', kit.id)
+                    ]).ids
                     if exist:
                         t_id = exist[0]
                         task = self.env['project.task'].browse(t_id)

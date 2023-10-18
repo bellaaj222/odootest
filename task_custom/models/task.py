@@ -152,6 +152,8 @@ class TaskCustom(models.Model):
     write_date = fields.Datetime(string='Last Modification Date', index=True, readonly=True,
                                  states={'draft': [('readonly', False)]}, )
     # not displayed in the view but it might be useful with base_action_rule module (and it needs to be defined first for that)
+    date_start_s = fields.Date(string='Date Début Etape')
+    date_end_s = fields.Date(string='Date Fin Etape')
     date_start = fields.Date(string='Date Début', index=True, copy=True, readonly=True,
                              states={'draft': [('readonly', False)]}, )
     date_end = fields.Date(string='Date Fin', index=True, copy=True, readonly=True,
