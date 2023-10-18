@@ -198,6 +198,15 @@ class EbMergegroups(models.Model):
     employee_ids6 = fields.Many2many('hr.employee', 'base_group_merge_automatic_wizard_hr_employee_rel6',
                                      'base_group_merge_automatic_wizard_id', 'hr_employee_id', string='Legumes')
     kit_id = fields.Many2one('product.kit', string='Kit')
+    facturable = fields.Selection([
+        ('facturable', 'Facturable'),
+        ('nfacturable', 'Non Facturable'),
+    ], 'Status', default='nfacturable')
+    project_id2 = fields.Many2one('project.project', 'Project',)
+    total_part_corr = fields.Selection([
+        ('partiel', 'Partiel'),
+        ('total', 'Total'),
+    ], 'Status', default='total',  states={'draft': [('readonly', False)]})
 
     @api.model
     def get_logged_in_employee(self):
@@ -210,13 +219,16 @@ class EbMergegroups(models.Model):
         res = super().default_get(fields_list)
         active_ids = self.env.context.get('active_ids')
         active_model = self.env.context.get('active_model')
+
+
+
         affectation_multiple = self.env['settings.custom'].search([('affectation_multiple', '=', 0)], limit=1)
         if active_model == 'project.task.work' and active_ids:
             if affectation_multiple:
                 res = self.get_default_multiple(active_ids, res, affectation_multiple)
             else:
                 for active_id in active_ids:
-                    work = self.env['project.task.work'].browse(active_id)
+                    # work = self.env['project.task.work'].browse(active_id)
                     res = self.get_default_simple(active_ids, res, affectation_multiple)
 
             self.update_result(res, active_ids, affectation_multiple)
@@ -1196,8 +1208,8 @@ class EbMergegroups(models.Model):
                     'task_id': work1.task_id.id,
                     'categ_id': work1.categ_id.id,
                     'sequence': cnt,
-                    'date_start_r': work1.date_start_r,
-                    'date_end_r': work1.date_end_r,
+                    'date_start_r': this.date_start_r,
+                    'date_end_r': this.date_end_r,
                     'poteau_t': work1.poteau_t,
                     'project_id': work1.task_id.project_id.id,
                     'gest_id': gest,
@@ -1205,6 +1217,9 @@ class EbMergegroups(models.Model):
                     'uom_id_r': work1.product_id.uom_id.id,
                     'zone': work1.zone,
                     'secteur': work1.secteur,
+                    'total_part_corr':this.total_part_corr,
+                    'project_id2': this.project_id2,
+                    'facturable': this.facturable,
                     'group_id': line.id
                 }
                 if tt:
@@ -1268,8 +1283,8 @@ class EbMergegroups(models.Model):
                         'work_id2': work.id,
                         'task_id': work1.task_id.id,
                         'categ_id': work1.categ_id.id,
-                        'date_start_r': work1.date_start_r,
-                        'date_end_r': work1.date_end_r,
+                        'date_start_r': self.date_start_r,
+                        'date_end_r': self.date_end_r,
                         'poteau_t': work1.poteau_t,
                         # 'sequence': cnt,
                         'project_id': work1.task_id.project_id.id,

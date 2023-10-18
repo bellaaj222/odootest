@@ -38,7 +38,7 @@
                                     <field name="sadmin" string="Categ" invisible="1"/>
                                     <field name="sadmin" string="super" invisible="1"/>
                                     <field name="categ_id" string="Categ" invisible="1"/>
-                                    <field name="id" string="ID"/>
+                                    <field name="id" string="ID" invisible="1"/>
                                     <field name="num" string="ID" invisible="1"/>
                                     <field name="type1" string="Type" invisible="1"/>
                                     <field name="donecq" string="Done" invisible="1"/>
@@ -67,21 +67,26 @@
                                 </group>
                             </group>
                             <group string="Informations Mails">
-                                <field name="obj" string="Objet Mail"/>
-                                <field name="zo" string="zo" invisible="1"/>
-                                <field name="sect" string="sect" invisible="1"/>
                                 <field name="mail_send1" string="Envoi Email?"
                                        attrs="{'readonly':[('state1', 'not in', ['draft'])]}"/>
+                                <field name="obj" string="Objet Mail"
+                                       attrs="{'invisible': [('mail_send1', '=', 'no')], 'required': [('mail_send1', '=', 'yes')]}"/>
+                                <field name="zo" string="zo" invisible="1"/>
+                                <field name="sect" string="sect" invisible="1"/>
                                 <field name="employee_ids3" string="A" widget="many2many_tags"
                                        options="{'no_create': True}"
-                                       attrs="{'readonly':[ '|', ('state1','not in',('draft')),('done1_','=',False)]}"/>
+                                       attrs="{'readonly': ['|', ('state1', 'not in', ('draft')), ('done1_', '=', False)],
+                                       'invisible': [('mail_send1', '=', 'no')], 'required': [('mail_send1', '=', 'yes')]}"/>
+
                                 <newline/>
                                 <button name="button_load_mail1" type="object" string="" icon="gtk-leave-fullscreen"
-                                        class="btn-primary" attrs="{'invisible':[('state1','not in',('draft'))]}"/>
+                                        class="btn-primary" attrs="{'invisible': ['|', ('state1', 'not in', ('draft')), ('mail_send1', '=', 'no')],
+                                       'required': [('mail_send1', '=', 'yes')]}"/>
                                 <newline/>
                                 <field name="employee_ids4" string="CC" widget="many2many_tags"
                                        options="{'no_create': True}"
-                                       attrs="{'readonly':[ '|', ('state1','not in',('draft')),('done1_','=',False)]}"/>
+                                       attrs="{'readonly':[ '|', ('state1','not in',('draft')),('done1_','=',False)],
+                                       'invisible': [('mail_send1', '=', 'no')], 'required': [('mail_send1', '=', 'yes')]}"/>
                                 <field name="employee_ids" string="CCi" widget="many2many_tags"
                                        options="{'no_create': True}"
                                        invisible="1"/>
@@ -95,11 +100,13 @@
                             <newline/>
                             <field name="note2" string="Commentaire Intervenant(Controle)"
                                    placeholder="Votre Commentaires/Remarques Ici"
-                                   attrs="{'readonly':[ '|', ('state1','not in',('draft')),('done1_','=',False)]}"/>
+                                   attrs="{'readonly':[ '|', ('state1','not in',('draft')),('done1_','=',False)],
+                                   'invisible': [('mail_send1', '=', 'no')], 'required': [('mail_send1', '=', 'yes')]}"/>
                             <newline/>
                             <field name="note3" string="Commentaire Superviseur(controle)"
                                    placeholder="Votre Commentaires/Remarques Ici"
-                                   attrs="{'readonly':[ '|',('state1','not in',('tovalid')),('done_','=',False)]}"/>
+                                   attrs="{'readonly':[ '|',('state1','not in',('tovalid')),('done_','=',False)],
+                                   'invisible': [('mail_send1', '=', 'no')], 'required': [('mail_send1', '=', 'yes')]}"/>
                         </group>
                         <group string="Travaux Planifiés">
                             <field name="work_ids" nolabel="1" readonly="1"
@@ -120,8 +127,8 @@
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
                                     <field name="date_end" string="Date Fin" widget="date" readonly="1"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
-                                    <field name="color" string="Durée (Jours)" sum="Total" readonly="1"
-                                           options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+<!--                                    <field name="color" string="Durée (Jours)" sum="Total" readonly="1"-->
+<!--                                           options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>-->
                                     <field name="hours" string="Durée (Heurs)"/>
                                     <field name="uom_id" string="Unité"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
@@ -129,34 +136,52 @@
 
                                     <field name="gest_id" string="Superviseur" readonly="1"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
-                                    <field name="employee_id" string="employee_id"/>
+<!--                                    <field name="employee_id" string="employee_id"/>-->
 
-                                    <field name="employee_id" string="Intervenant" readonly="1"
-                                           options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+<!--                                    <field name="employee_id" string="Intervenant" readonly="1"-->
+<!--                                           options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>-->
                                     <field name="state" string="Etat" readonly="1"/>
-                                    <button name="action_open_histo" string="Consulter Historique Tache" type="object"
-                                            icon="gtk-dnd"/>
+<!--                                    <button name="action_open_histo" string="Consulter Historique Tache" type="object"-->
+<!--                                            icon="gtk-dnd"/>-->
 
                                 </tree>
                             </field>
                         </group>
 
                         <group string="Informations Bons">
+
                             <group>
-                                <newline/>
+                                <field name="date_start_r" string="Date  Début"/>
+<!--                                attrs="{'readonly':[ ('state','!=','draft')]}"-->
+                            </group>
+                            <group>
+                                <field name="date_end_r" string="Date  Fin"/>
+                            </group>
+                            <group>
+                                <field name="ftp" string="FTP" />
+                                <!--    attrs="{'readonly':[ ('state','!=','draft')]}-->
+
+                            </group>
+                            <newline/>
+                            <newline/>
+                            <group> </group>
+                            <group>
+
+<!--                                <group>-->
+<!--                                    <button name="button_save_" type="object" string="Save"-->
+<!--                                            nolabel="1"-->
+<!--                                            class="btn-primary"-->
+<!--                                            attrs="{'invisible':[('state1', 'not in', ['draft','tovalid'])]}"/>-->
+<!--                                </group>-->
                                 <group>
-                                    <button name="button_save_" type="object" string="Save" icon="gtk-floppy"
-                                            nolabel="1"
-                                            class="btn-primary"
-                                            attrs="{'invisible':[('state1', 'not in', ['draft','tovalid'])]}"/>
-                                </group>
-                                <group>
-                                    <button name="button_import_bon_control" type="object" string="Importer Travaux de Controles"
-                                            icon="gtk-sort-descending" confirm="Créer un Bon de Controle?"
+                                    <button name="button_import_bon_control" type="object"
+                                            string="Importer Travaux de Controles"
+                                            confirm="Créer un Bon de Controle?"
                                             class="btn-primary"
                                             attrs="{'invisible':['|',('state1','not in',['draft']),('done1_','=',False)]}"/>
                                 </group>
                             </group>
+                            <group> </group>
                             <newline/>
                             <field name="line_ids2" nolabel="1"
                                    attrs="{'readonly':[('state1', 'not in', ('draft','tovalid'))]}">
@@ -180,7 +205,7 @@
 
 
                                     <field name="categ_id" string="min_id" invisible="1"/>
-                                    <field name="color1" string="Jrs" sum="Prev Hours"/>
+<!--                                    <field name="color1" string="Jrs" sum="Prev Hours"/>-->
                                     <field name="hours_r" string="Hrs" widget="float_time" sum="Prev Hours"
                                            bg_color="thistle:work_id!=True;"/>
                                     <field name="poteau_r" string="Qté/Unité" sum="Prev Hours" widget="char"

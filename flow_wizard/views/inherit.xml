@@ -18,6 +18,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='work_ids']/tree/field[@name='secteur']" position="after">
                 <field name="done4" string="Libellé " readonly="1" invisible="1"/>
+               <field name="web_diagram_id"/>
             </xpath>
         </field>
     </record>

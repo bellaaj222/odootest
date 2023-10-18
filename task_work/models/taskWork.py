@@ -13,9 +13,13 @@ class TaskWork(models.Model):
     _description = 'Project Task Work'
     _rec_name = 'name'
 
-
-
-
+    # recently added :
+    web_diagram_id = fields.Many2one(
+        'web.diagram.plus', 'Web Diagram', ondelete='cascade',
+        required=True, index=True, tracking=True)
+    date_start_s = fields.Date(string='Date Début Etape')
+    date_end_s = fields.Date(string='Date Fin Etape')
+    # end.
     state_prod = fields.Selection([('draft', 'T. Planifiées'),
                                    ('affect', 'T. Affectées'),
                                    ('started', 'T. Commencées'),
@@ -265,6 +269,27 @@ class TaskWork(models.Model):
 
     employee_ids = fields.Many2many('res.users', string='Employés assignés')
     step_id = fields.Many2one('product.step', string='Etape')
+    nature_tache = fields.Char(string='nature de tache')
+
+    # @api.depends('product_id.name')
+    # def _compute_nature_tache(self):
+    #     print('_compute_nature_tache')
+    #     for rec in self:
+    #         if 'correction' in rec.product_id.name:
+    #             self.write({'nature_tache':'correction'})
+    #             print('rec.product_id.name :', rec.product_id.name)
+    #             print('_compute_nature_tache :', rec.nature_tache)
+    #         elif u'Contrôle' in rec.product_id.name:
+    #             self.nature_tache = 'Contrôle'
+    #             self.write({'nature_tache': 'Contrôle'})
+    #             print('rec.product_id.name :',rec.product_id.name)
+    #             print('_compute_nature_tache :', rec.nature_tache)
+    #         else:
+    #             self.nature_tache = 'prod'
+    #             self.write({'nature_tache': 'prod'})
+    #
+    #             print('rec.product_id.name :', rec.product_id.name)
+    #             print('_compute_nature_tache :', rec.nature_tache)
 
     # employee_image_128 = fields.Binary("Employee Image 1920", compute='_compute_employee_image_1920', store=False)
     #
@@ -273,6 +298,11 @@ class TaskWork(models.Model):
     #     for task_work in self:
     #         employee_images = task_work.employee_ids.mapped('image_1920')
     #         task_work.employee_image_128 = employee_images and employee_images[0] or False
+
+    # @api.model
+    # def default_get(self, fields_list):
+    #     res = super().default_get(fields_list)
+    #     print('res :', res)
 
     def start_work(self):
         self.state_prod = 'started'
@@ -478,8 +508,10 @@ class TaskWork(models.Model):
         print('_isinter ')
         # print('self.employee_ids: ', self.employee_ids.image_1920)
         # print('self.employee_ids: ', self.employee_ids.image_128)
-        for book in self:
-            book.is_intervenant = True
+        for rec in self:
+            rec.is_intervenant = True
+            print('product_id :', rec.product_id)
+            print('product_id.name :', rec.product_id.name)
 
             # if book.line_ids:
             #     tt = []
@@ -499,7 +531,33 @@ class TaskWork(models.Model):
             #         if test:
             #             book.is_intervenant = True
 
-    #
+    def view_product(self):
+        print('butt_info')
+        tt = []
+        print('')
+        wrk = self.env['project.task.work'].search([('work_group_id', '=', self.work_group_id),
+                                                    ('kit_id', '=', self.kit_id.id)])
+
+        for work in wrk:
+            print('work:', work)
+            tt.append(work.id)
+        print('tt :', tt)
+
+        view_id = self.env.ref('task_work.view_liste_task_work').id
+
+        return {
+            'name': 'Liste des tâches',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'tree,form',
+            'target': 'new',
+            'res_model': 'project.task.work',
+            'context': {},
+            'views': [(view_id, 'tree')],
+            'view_id': view_id,
+            'domain': [('id', 'in', tt)],
+        }
+
     def _iscontrol(self):
         print('_iscontrol ')
         for book in self:
@@ -633,7 +691,8 @@ class TaskWork(models.Model):
 
             rec.risk = ratio
 
-    def action_affect(self):
+    def action_affect(self, type_affect):
+        print('type_affect:', type_affect)
 
         return {
             'name': 'Modification Travaux Permis',
@@ -645,9 +704,19 @@ class TaskWork(models.Model):
             'view_id': self.env.ref('eb_invoices_wizard.view_merge_tasks_form').id,
             'context': {'active_ids': self.ids,
                         'active_model': self._name,
-                        'types_affect': 'intervenant'},
+                        'types_affect': type_affect,
+                        },
             'domain': []
         }
+
+    def action_affect_production(self):
+        return self.action_affect('intervenant')
+
+    def action_affect_controle(self):
+        return self.action_affect('controle')
+
+    def action_affect_correction(self):
+        return self.action_affect('correction')
 
     def action_permis(self):
 
@@ -664,20 +733,20 @@ class TaskWork(models.Model):
             'domain': []
         }
 
-    def view_product(self):
-
-        return {
-            'name': 'Consulter Liste des Services',
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'target': 'new',
-            'res_model': 'product.kit',
-            'view_id': self.env.ref('product_custom.view_kit_form_popup').id,
-            'res_id': self.kit_id.id,
-            'context': {},
-            'domain': []
-        }
+    # def view_product(self):
+    #
+    #     return {
+    #         'name': 'Consulter Liste des Services',
+    #         'type': 'ir.actions.act_window',
+    #         'view_type': 'form',
+    #         'view_mode': 'form',
+    #         'target': 'new',
+    #         'res_model': 'product.kit',
+    #         'view_id': self.env.ref('product_custom.view_kit_form_popup').id,
+    #         'res_id': self.kit_id.id,
+    #         'context': {},
+    #         'domain': []
+    #     }
 
     def action_duplicate(self):
 

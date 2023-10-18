@@ -1,16 +1,17 @@
 {
-    'name': 'CRnD Web Diagram Plus',
+    'name': 'Web Diagram Plus',
     'category': 'Technical Settings',
     'summary': """
-        Odoo Web Diagram view by CRnD.
+        Odoo Diagram .
     """,
+    'sequence': -120,
     'author': 'Center of Research and Development',
     'support': 'info@crnd.pro',
     'website': 'https://crnd.pro',
     'license': 'LGPL-3',
     'version': '15.0.0.10.0',
     'depends': [
-        'web', 'flow_wizard','project_custom'
+        'web', 'flow_wizard', 'project_custom'
     ],
     'assets': {
         'web.assets_qweb': [
@@ -38,7 +39,6 @@
         'views/web_diagram_plus.xml',
         'views/web_diagram_plus_arrow.xml',
         'views/web_diagram_plus_node.xml',
-
 
     ],
     'images': ['static/description/banner.png'],

@@ -71,9 +71,8 @@
                                     <field name="categ_id" string="Département"
                                            options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                            required="1"/>
-<!--                                    <field name="web_diagram_id"/>-->
-<!--                                    <field name="from_node_id"/>-->
-<!--                                    <field name="to_node_id"/>-->
+
+
                                     <field name="done" string="Taches de Corrections?"
                                            help="Coché pour les taches de controles"/>
                                     <field name="zone" string="Zone?" help="Ignoré si =0"/>

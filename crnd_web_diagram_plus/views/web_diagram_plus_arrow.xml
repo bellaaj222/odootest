@@ -3,7 +3,7 @@
         <field name="model">web.diagram.plus.arrow</field>
         <field name="arch" type="xml">
             <tree>
-                <field name="name"/>
+                <field name="actions"/>
                 <field name="web_diagram_id"/>
                 <field name="from_node_id"/>
                 <field name="to_node_id"/>
@@ -12,13 +12,19 @@
     </record>
     <record id="view_web_diagram_plus_arrow_form" model="ir.ui.view">
         <field name="model">web.diagram.plus.arrow</field>
-        <field name="arch" type="xml">zzzzzz
+        <field name="arch" type="xml">
             <form>
                 <sheet>
                     <group>
                         <group>
-                            <field name="name"/>
+                            <field name="name" widget="many2one_tags" options="{'no_create': True}"/>
+<!--                            <button name="action_open_workflow_action" type="object" string="Ajouter une action workflow" class="oe_highlight"/>-->
+
                             <field name="web_diagram_id"/>
+                            <field name="date" string="Date Action"/>
+                            <field name="actions" string=" Action"/>
+                            <field name="created_by" string="Emp"/>
+
                         </group>
                         <group>
                             <field name="from_node_id"/>

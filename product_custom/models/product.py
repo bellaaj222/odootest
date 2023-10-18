@@ -321,7 +321,6 @@ class ProductTemplate(models.Model):
 
     name = fields.Char(required=False)
 
-
 class ProductStep(models.Model):
     _name = 'product.step'
 
@@ -329,6 +328,7 @@ class ProductStep(models.Model):
     kit_ids = fields.Many2many('product.kit', string='Liste des Kits')
     description = fields.Text(string='Description')
     is_divide = fields.Boolean(string='Est divisible ?', default=True)
+
 
 class ProductKit(models.Model):
     _name = "product.kit"
