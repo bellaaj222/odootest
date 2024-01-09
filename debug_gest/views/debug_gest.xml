@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_debug_gest_tree" model="ir.ui.view">
+        <field name="name">debug.gest.tree</field>
+        <field name="model">debug.gest</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="priority" widget="priority"/>
+                <field name="reclamation_date"/>
+                <field name="reclamation_type"/>
+                <field name="employee_id" widget="many2one_avatar_employee"/>
+                <field name="state" string="Etat"
+                       decoration-muted="state =='draft'"
+                       decoration-primary="state =='waiting'"
+                       decoration-info="state =='allocated'"
+                       decoration-warning="state =='in_progress'"
+                       decoration-success="state =='treated'"
+                       widget="badge"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_debug_gest_form" model="ir.ui.view">
+        <field name="name">debug.gest.form</field>
+        <field name="model">debug.gest</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,waiting,allocated,in_progress,treated"/>
+                    <button name="button_send" type="object" string="Déposer" class="oe_highlight"
+                            attrs="{'invisible': [('state', '!=', 'draft')]}"/>
+                    <button name="button_affect" type="object" string="Affecter" class="oe_highlight"
+                            attrs="{'invisible': ['|', ('state', '!=', 'waiting'), ('is_dev', '=', False)]}"/>
+                    <button name="button_start" type="object" string="Commencer" class="oe_highlight"
+                            attrs="{'invisible': ['|', ('state', '!=', 'allocated'), ('is_affect', '=', False)]}"/>
+                    <button name="button_finish" type="object" string="Déclarer Traitée" class="oe_highlight"
+                            attrs="{'invisible': ['|', ('state', '!=', 'in_progress'), ('is_affect', '=', False)]}"/>
+                </header>
+                <sheet>
+                    <div>
+                        <h1>
+                            <field name="priority" widget="priority"/>
+                        </h1>
+                    </div>
+                    <group string="Données">
+                        <group>
+                            <field name="reclamation_date" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="employee_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Sujet">
+                        <group>
+                            <field name="reclamation_type"/>
+                            <field name="note_employee" placeholder="Décrivez brièvement votre demande"/>
+                        </group>
+                        <group>
+                            <field name="attach_ids" widget="many2many_binary" class="oe_inline"
+                                   string="Pièces Jointes"/>
+                        </group>
+                    </group>
+                    <group string="Affectation" attrs="{'invisible': [('state', 'in', ('draft', 'waiting'))]}">
+                        <group>
+                            <field name="is_dev" invisible="1"/>
+                            <field name="is_affect" invisible="1"/>
+                            <field name="dev_ids" widget="many2many_avatar_employee"/>
+                            <!--                            # TODO : add domain -->
+                        </group>
+                        <group>
+                            <field name="note_supervisor"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_debug_gest" model="ir.actions.act_window">
+        <field name="name">Réclamations</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">debug.gest</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem id="menu_debug_gest" name="Réclamations" parent="project_custom.menu_conf"
+              sequence="10" action="action_debug_gest"/>
+
+</odoo>

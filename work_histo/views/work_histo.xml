@@ -1,0 +1,55 @@
+<odoo>
+
+    <record id="work_histo_form" model="ir.ui.view">
+        <field name="name">work.histo.form</field>
+        <field name="model">work.histo</field>
+        <field name="arch" type="xml">
+            <form string="Tasks History">
+                <group>
+                    <group>
+                        <field name="id" readonly="1"/>
+                        <field name="name" readonly="1"/>
+                        <field name="date" invisible="1"/>
+                        <field name="create_by" readonly="1"/>
+                        <field name="create_a" readonly="1"/>
+                        <field name="work_sup_id" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                               readonly="1"/>
+                        <button name="action_open_work_sup" help="Consulter Historique Tache Source de Subdivision"
+                                type="object" icon="gtk-preferences" attrs="{'invisible':[('work_sup_id','=',False)]}"/>
+                    </group>
+                    <group>
+                        <field name="project_id" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                               readonly="1"/>
+                        <field name="task_id" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                               readonly="1" string="Tache"/>
+                        <field name="categ_id" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                               readonly="1"/>
+                        <field name="zone" readonly="1"/>
+                        <field name="secteur" readonly="1"/>
+                        <field name="work_id" invisible="1" string="Work"/>
+                        <field name="product_id" invisible="1"/>
+                    </group>
+                </group>
+                <group colspan="4">
+                    <group>
+                        <field name="line_ids" nolabel="1" readonly="1">
+                            <tree>
+                                <field name="type"/>
+                                <field name="date"/>
+                                <field name="create_by"/>
+                                <field name="execute_by"/>
+                                <field name="actions"/>
+                                <field name="lien_ftp" invisible="1"/>
+                                <field name="coment1" string="Commentaire"/>
+                                <field name="coment2" invisible="1"/>
+                                <button name="action_open_object" string="Consulter" type="object"
+                                        icon="fa-external-link"/>
+                            </tree>
+                        </field>
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+
+</odoo>

@@ -1,0 +1,16 @@
+<odoo>
+
+    <record id="action_generate_facture" model="ir.actions.server">
+        <field name="name">Générer Facture</field>
+        <field name="type">ir.actions.server</field>
+        <field name="model_id" ref="task_work.model_project_task_work_line"/>
+        <field name="binding_model_id" ref="task_work.model_project_task_work_line"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+            action = records.action_create_facture()
+        </field>
+    </record>
+
+</odoo>
+

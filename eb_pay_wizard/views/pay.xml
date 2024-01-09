@@ -1,0 +1,39 @@
+<odoo>
+
+    <record id="view_pay_merge_form" model="ir.ui.view">
+        <field name="name">pay.merge.form</field>
+        <field name="model">base.pay.merge.automatic.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Merge Tasks">
+                <header>
+                    <button name="action_treat" type="object" string="Valider le Traitement" class="oe_highlight"
+                            confirm="Confirmez-vous le Traitement des Factures?"/>
+                    <button name="action_pay" type="object" string="Valider le paiement" class="oe_highlight"
+                            confirm="Confirmez-vous le Paiement des Factures?"/>
+                </header>
+                <sheet string="Project">
+                    <!-- <h5>***If Assigned to: is empty , the user from the destination task will be assigned!</h5> -->
+                    <group string="Factures concernées">
+                        <field name="bon_ids" nolabel="1">
+                            <tree string="Tasks" create="false" edit="false" readonly="1">
+                                <field name="date" string="Date Doc"/>
+                                <field name="name" string="N° Facture"/>
+                                <field name="employee_id" string="Intervenant"/>
+                                <field name="amount_untaxed" widget="monetary"
+                                       options="{'currency_field': 'currency_id'}" string="Total H.T" sum="1"/>
+                                <field name="amount_tvq" widget="monetary" options="{'currency_field': 'currency_id'}"
+                                       string="TVQ" sum="1"/>
+                                <field name="amount_tps" widget="monetary" options="{'currency_field': 'currency_id'}"
+                                       string="TPS" sum="1"/>
+                                <field name="amount_total" widget="monetary" options="{'currency_field': 'currency_id'}"
+                                       string="TTC" sum="1"/>
+                                <field name="state" string="Etat"/>
+                            </tree>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>
