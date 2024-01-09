@@ -11,9 +11,11 @@ class MergeFacturesLine(models.Model):
     _name = 'base.facture.merge.line'
     _order = 'min_id asc'
 
-    @api.depends('poteau_t', 'price')
-    def _compute_amount(self):
-        self.total = self.price * self.poteau_t
+    ##    @api.depends('poteau_t', 'price')
+    ##    def _compute_amount(self):
+    ####        raise UserError(
+    ####                                                _('Error !\nVous devez avoir un seul contrat valide pour Mr/Mme %s !') % self.price)
+    ##    self.total = self.price or 0 * self.poteau_t or 0
 
     wizard_id = fields.Many2one('base.facture.wizard', 'Wizard')
     min_id = fields.Integer(string='MinID')
@@ -35,7 +37,7 @@ class MergeFacturesLine(models.Model):
     uom_id = fields.Many2one('product.uom', string='Wizard')
     code = fields.Char(string='name')
     price = fields.Float(string='Wizard')
-    total = fields.Float(string='Wizard', store=True, readonly=True, compute='_compute_amount')
+    total = fields.Float(string='Wizard', readonly=True)
     plan_id = fields.Many2one('risk.management.response.category', string='Wizard')
     plan_id2 = fields.Many2one('risk.management.response.category', string='Wizard')
     risk_id = fields.Many2one('risk.management.category', string='Wizard')
@@ -43,7 +45,8 @@ class MergeFacturesLine(models.Model):
     # verify this onchange
     @api.onchange('poteau_t', 'price')
     def onchange_qty(self):
-        raise UserError(_('Error !\nNo period defined for this date: %s ') % self.price)
+        ## raise UserError(_('Error !\nNo period defined for this date: %s ') % self.price)
+        self.total = self.poteau_t * self.price
 
     @api.onchange('product_id')
     def onchange_product_id(self):
@@ -135,14 +138,31 @@ class EbMergeFactures(models.Model):
         res = super(EbMergeFactures, self).default_get(fields_list)
         active_ids = self.env.context.get('active_ids')
         project_list = []
+        list_wo_no_duplicate = []
+        vv = []
+        tt = self.env['project.task.work.line'].browse(self.env.context.get('active_ids'))
+        active_ids = tt.ids
+        for kk in active_ids:
+            vv.append(kk)
+        res.update({'work_ids': vv})
         if active_ids:
-            res['work_ids'] = active_ids
+
+            ##            res['work_ids'] = active_ids
             for jj in active_ids:
+
                 work = self.env['project.task.work.line'].browse(jj)
                 project_list.append(work.project_id.id)
-                res.update({'partner_id': work.partner_id.id, 'project_id': work.project_id.id})
-            list_wo_no_duplicate = list(set(project_list))
-            res.update({'partner_id': work.work_id.task_id.partner_id.id, 'project_ids': list_wo_no_duplicate})
+                if work.project_id:
+                    res.update({'project_id': work.project_id.id})
+                if work.partner_id:
+                    res.update({'partner_id': work.project_id.partner_id.id})
+            if len(project_list) > 0:
+                list_wo_no_duplicate = list(set(project_list))
+        ##            raise UserError(
+        ##                                                _('Error !\nVous devez avoir un seul contrat valide pour Mr/Mme %s !') % list_wo_no_duplicate)
+        ##if len(list_wo_no_duplicate)>0:
+        ##list_wo_no_duplicate = list(set(project_list))
+        res.update({'project_ids': project_list, 'partner_id': work.work_id.task_id.partner_id.id})
         return res
 
     @api.depends('line_ids.total')
@@ -176,7 +196,7 @@ class EbMergeFactures(models.Model):
     date_from = fields.Date(string='Wizard', select=True, default=time.strftime('%Y-01-01'))
     date_to = fields.Date(string='Wizard', select=True, default=datetime.today())
     date_inv = fields.Date(string='Wizard', select=True, default=datetime.today())
-    partner_id = fields.Many2one('res.partner', string='Wizard')
+    partner_id = fields.Many2one('res.partner', string='Client', required=True)
     work_id = fields.Many2one('project.task.work', string='Wizard')
     categ_id = fields.Many2one('product.category', string='Wizard')
     product_id = fields.Many2one('product.product', string='Wizard')
@@ -193,7 +213,7 @@ class EbMergeFactures(models.Model):
         ('draft', 'Brouillon'),
         ('open', 'Validé')
 
-    ], string='Priority', default='draft', select=True)
+    ], string='Etat', default='draft', select=True)
     week_no = fields.Selection([
         ('00', '00'),
         ('01', '01'),
@@ -281,6 +301,66 @@ class EbMergeFactures(models.Model):
     taux_gain = fields.Float(compute='_compute_progress_gauge', string='% Taux Gain', readonly=True, )
     progress_gauge_total = fields.Float(string='%', readonly=True, )
 
+    def get_work_line(self):
+
+        # Clear existing work_ids
+        self.work_ids = [(5, 0, 0)]
+
+        # Checks
+        if not self.project_ids:
+            raise UserError(_('Vous devez selectionner au moins un projet.'))
+        if self.secteur < 99 and self.zone == 99:
+            raise UserError(_('Veuillez choisir la zone appropriée'))
+
+        # departement filter
+        categ_ids = []
+        if self.categ_id:
+            categ_ids.append(self.categ_id.id)
+        else:
+            categ_ids = self.env['product.category'].search([]).ids
+
+        # dates filter
+        date_from = '01/01/1900'
+        date_to = '01/01/2900'
+        if self.date_from:
+            date_from = self.date_from
+        if self.date_to:
+            date_to = self.date_to
+
+        # Search
+        zone = self.zone
+        sect = self.secteur
+
+        if zone == 99 and sect == 99:
+            line_ids = self.env['project.task.work.line'].search([
+                ('project_id', 'in', self.project_ids.ids),
+                ('categ_id', 'in', categ_ids),
+                ('date', '>=', date_from),
+                ('date', '<=', date_to),
+                ('facture', '=', False)
+            ]).ids
+        elif zone < 99 and sect == 99:
+            line_ids = self.env['project.task.work.line'].search([
+                ('project_id', 'in', self.project_ids.ids),
+                ('categ_id', 'in', categ_ids),
+                ('zone', '=', zone),
+                ('date', '>=', date_from),
+                ('date', '<=', date_to),
+                ('facture', '=', False)
+            ]).ids
+        else:
+            line_ids = self.env['project.task.work.line'].search([
+                ('project_id', 'in', self.project_ids.ids),
+                ('categ_id', 'in', categ_ids),
+                ('zone', '=', zone),
+                ('secteur', '=', sect),
+                ('date', '>=', date_from),
+                ('date', '<=', date_to),
+                ('facture', '=', False)
+            ]).ids
+
+        self.work_ids = line_ids
+
     def rentabilite_projet(self):
         this = self.browse(self.ids[0])
         self.env.cr.execute("delete from project_profitability")
@@ -318,7 +398,7 @@ class EbMergeFactures(models.Model):
                             for list in aca:
                                 if list:
                                     ligne = academic_obj.browse(list)
-                                    if ligne.curr_ids:
+                                    if ligne.curr_ids.ids:
                                         sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
                                                                  reverse=True)
                                         for ll in sorted_curr_ids:
@@ -416,7 +496,7 @@ class EbMergeFactures(models.Model):
                                                             work_line.browse(rec.id).write({'rentability': total_dep,
                                                                                             'taux_horaire': wage})
                                                             break
-                                    if ligne.curr_ids:
+                                    if ligne.curr_ids.ids:
                                         sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
                                                                  reverse=True)
                                         for ll in sorted_curr_ids:
@@ -518,7 +598,7 @@ class EbMergeFactures(models.Model):
                                                                                             'taux_horaire': wage})
                                                             break
                                         continue
-                                    if ligne.curr_ids:
+                                    if ligne.curr_ids.ids:
                                         sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
                                                                  reverse=True)
                                         for ll in sorted_curr_ids:
@@ -621,7 +701,7 @@ class EbMergeFactures(models.Model):
                                                     break
 
                             if wage == 0:
-                                roles = roles_obj.search([])
+                                roles = roles_obj.search([]).ids
                                 for gp in roles:
                                     ro = roles_obj.browse(gp)
                                     if rec.employee_id.id in ro.employee_ids.ids:
@@ -630,7 +710,7 @@ class EbMergeFactures(models.Model):
                                             for list in aca:
                                                 if list:
                                                     ligne = academic_obj.browse(list)
-                                                    if ligne.curr_ids:
+                                                    if ligne.curr_ids.ids:
                                                         sorted_curr_ids = sorted(ligne.curr_ids,
                                                                                  key=lambda x: x['product_id'],
                                                                                  reverse=True)
@@ -746,7 +826,7 @@ class EbMergeFactures(models.Model):
                                                                                  'taux_horaire': wage})
 
                                                                             break
-                                                    if ligne.curr_ids:
+                                                    if ligne.curr_ids.ids:
                                                         sorted_curr_ids = sorted(ligne.curr_ids,
                                                                                  key=lambda x: x['product_id'],
                                                                                  reverse=True)
@@ -864,7 +944,7 @@ class EbMergeFactures(models.Model):
                                                                                  'taux_horaire': wage})
 
                                                                             break
-                                                    if ligne.curr_ids:
+                                                    if ligne.curr_ids.ids:
                                                         sorted_curr_ids = sorted(ligne.curr_ids,
                                                                                  key=lambda x: x['product_id'],
                                                                                  reverse=True)
@@ -981,11 +1061,12 @@ class EbMergeFactures(models.Model):
                             if employee:
                                 for list in employee:
                                     if list:
-                                        ligne_emp = employee_obj.browse(list)
-                                        contract = self.env['hr.contract'].search([('employee_id', '=', list), (
+                                        ligne_emp = employee_obj.browse(list.id)
+
+                                        contract = self.env['hr.contract'].search([('employee_id', '=', ligne_emp.id), (
                                             'trial_date_start', '<=',
-                                            rec.date_start_r)],
-                                                                                  order="id desc")
+                                            rec.date_start_r)], order="id desc")
+
                                         if len(contract) > 1:
                                             raise UserError(
                                                 _('Error !\nVous devez avoir un seul contrat valide pour Mr/Mme %s !') % ligne_emp.name)
@@ -1221,7 +1302,7 @@ class EbMergeFactures(models.Model):
         tps_ = self.env['account.tax'].browse(8)
         for current in self:
             for tt in current.line_ids:
-                sum1 = sum1 + tt.total
+                sum1 = sum1 + (tt.price * tt.poteau_t)
 
         self.write({'amount_untaxed': sum1, 'tps': tps_.amount * sum1, 'tvq': tvq_.amount * sum1})
         return True
@@ -1239,6 +1320,17 @@ class EbMergeFactures(models.Model):
                 to_delete.append(line.id)
                 line_to_merge.write({'poteau_t': line_to_merge.poteau_t + line.poteau_t})
         self.write({'line_ids': [(2, x, 0) for x in to_delete]})
+        return {
+            'name': 'Factures Client',
+            'type': 'ir.actions.act_window',
+            'view_type': 'form',
+            'view_mode': 'form',
+            'target': 'new',
+            'res_model': 'base.facture.wizard',
+            'context': {},
+            'res_id': self.id
+
+        }
 
     #     @api.multi
     #     def button_merge(self):
@@ -1810,19 +1902,26 @@ class EbMergeFactures(models.Model):
         the selected journals and periods, so the user can review
         the renumbered account moves.
         """
-        current = self.browse(self.ids[0])
-        for s3 in current.work_ids.ids:
-            if current.clos:
-                self.env['project.project'].set_done([current.project_id.id])
-
-            if not current.num:
-                raise UserError(_('Action Impossible!\nN° Facture Obligatoire !'))
-            self.env['project.task.work.line'].browse(s3).write({'num': current.num, 'date_inv': current.date_inv,
-                                                                 'facture': True})
+        if not self.num:
+            raise UserError(_('Action Impossible!\nN° Facture Obligatoire !'))
+        for work_line_id in self.work_ids.ids:
+            self.env['project.task.work.line'].browse(work_line_id).write(
+                {'num': self.num,
+                 'date_inv': self.date_inv,
+                 'facture': True})
+        if self.clos:
+            self.env.cr.execute('UPDATE project_task SET state=%s WHERE project_id IN %s',
+                                ('close', tuple(self.project_ids.ids)))
+            self.env.cr.execute('UPDATE project_task_work SET ex_state=%s WHERE project_id IN %s',
+                                ('state', tuple(self.project_ids.ids)))
+            self.env.cr.execute('UPDATE project_task_work SET state=%s WHERE project_id IN %s',
+                                ('valid', tuple(self.project_ids.ids)))
+            for project_id in self.project_ids.ids:
+                self.env['project.project'].browse(project_id).write({'state': 'close'})
 
         self.write({'state': 'open'})
-        view = self.env['sh.message.wizard']
 
+        view = self.env['sh.message.wizard']
         view_id = view and view.id or False
         return {
             'name': 'Facture généré avec Succès',

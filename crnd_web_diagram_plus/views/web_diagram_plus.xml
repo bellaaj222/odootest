@@ -18,23 +18,11 @@
                             <button name="action_web_diagram_plus" type="object" string="View Diagram"
                                     class="oe_stat_button" icon="fa-code-fork"></button>
 
-                            <button name="%(action_web_diagram_plus_arrow_model)d"
-                                    type="action"
-                                    class="oe_stat_button" icon="fa-random">
-                                <field string="Actions WorkFlow" name="node_count"
-                                       widget="statinfo"/>
-                            </button>
-                            <button name="%(action_web_diagram_plus_node_model)d"
-                                    type="action"
-                                    class="oe_stat_button" icon="fa-bars">
-                                <field string="Départements" name="arrow_count"
-                                       widget="statinfo"/>
-                            </button>
 
                         </div>
                     </group>
 
- <div class="oe_title">
+                        <div class="oe_title">
                             <h1 name="header_type">
                                    <field name="name" placeholder="Diagram name"/>
                             </h1>
@@ -50,32 +38,7 @@
                             <page string="Actions WorkFlow">
                                 <field name="arrow_ids"/>
                             </page>
-                            <page string="Project">
-                                <field name="project_ids" readonly="0">
-                                    <tree decoration-info="state == 'draft'" decoration-success="state == 'close'"
-                                          decoration-danger="state == 'cancelled'" string="Projects" create="0">
-                                        <field name="id" string="ID"/>
-                                        <field name="name"/>
-                                        <field name="task_count"/>
-                                        <field name="date" string="Date"/>
-                                        <field name="partner_id" string="Client"/>
-                                        <field name="hours_r" string="% Hrs" widget="percentpie"/>
-                                        <field name="state"/>
-                                        <button name="action_open_project" string="Consulter Projet" type="object"
-                                                icon="fa-edit"/>
-                                    </tree>
-                                </field>
-                            </page>
-
-
                         </notebook>
-
-
-                        <!--                        <div class="oe_chatter">-->
-                        <!--                            <field name="message_follower_ids"/>-->
-                        <!--                            <field name="message_ids"/>-->
-                        <!--                        </div>-->
-
                     </group>
                 </sheet>
             </form>

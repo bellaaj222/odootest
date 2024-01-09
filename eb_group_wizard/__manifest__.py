@@ -9,7 +9,7 @@
     'category': 'Project, Tasks',
     'version': '15.0.1.0.0',
     'depends': ['base',
-                'task_work',
+                'project_custom',
                 ],
     'data': [
         'security/ir.model.access.csv',
@@ -22,6 +22,8 @@
         'views/retour_bons_correction.xml',
         'views/choix_declaration_bons.xml',
         'views/button.xml',
+        'views/dash.xml',
+        'views/inherit.xml',
     ],
     'demo': [],
     'images': [

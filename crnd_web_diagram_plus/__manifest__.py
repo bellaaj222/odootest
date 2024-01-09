@@ -11,7 +11,7 @@
     'license': 'LGPL-3',
     'version': '15.0.0.10.0',
     'depends': [
-        'web', 'flow_wizard', 'project_custom'
+        'web','project_custom'
     ],
     'assets': {
         'web.assets_qweb': [

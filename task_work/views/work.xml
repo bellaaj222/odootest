@@ -1,4 +1,4 @@
-<odoo>
+﻿<odoo>
     <data>
         <!--        <template id="assets_backend" name="task_work assets" inherit_id="web.assets_backend">-->
         <!--            <xpath expr="." position="inside">-->
@@ -10,10 +10,8 @@
             <field name="name">task.work.kanban</field>
             <field name="model">project.task.work</field>
             <field name="arch" type="xml">
-                <kanban class="o_kanban_dashboard" default_group_by="state_prod">
+                <kanban class="o_kanban_dashboard" default_group_by="state" create="0">
                     <field name="name"/>
-                    <field name="stage"/>
-                    <field name="state_prod"/>
                     <field name="project_id"/>
                     <field name="categ_id"/>
                     <field name="partner_id"/>
@@ -22,7 +20,6 @@
                     <field name="date_start"/>
                     <field name="date_end"/>
                     <field name="color"/>
-                    <field name="nature_tache"/>
                     <field name="employee_ids_production"/>
                     <field name="employee_ids_controle"/>
                     <field name="employee_ids_correction"/>
@@ -30,20 +27,11 @@
                         <t t-name="kanban-box">
                             <div t-attf-class="oe_kanban_content oe_kanban_global_click">
 
-                                <div class="kanban_stage_prod" attrs="{'invisible':[('stage','!=','prod')]}">
-                                    <field name="prod_str"/>
+                                <div class="oe_kanban_permis" attrs="{'invisible':[('categ_id','!=', 6)]}">
+                                    <field name="permis_str"/>
                                 </div>
 
-                                <div class="kanban_stage_ctrl" attrs="{'invisible':[('stage','!=','ctrl')]}">
-                                    <field name="ctrl_str"/>
-                                </div>
-
-                                <div class="kanban_stage_corr" attrs="{'invisible':[('stage','!=','corr')]}">
-                                    <field name="corr_str"/>
-                                </div>
-
-
-                                <div class="text-right">
+                                <div class="text-right" attrs="{'invisible':[('categ_id','=', 6)]}">
                                     <field name="priority" widget="priority"/>
                                 </div>
 
@@ -55,19 +43,60 @@
                                     <field name="partner_id"/>
                                 </div>
 
-                                <div>
+                                <div attrs="{'invisible':[('categ_id','!=', 6)]}">
                                     <span class="o_text_overflow text-center" style="font-size: 18px;">
-                                        <t t-esc="record.kit_id.value"/>
+                                        <t t-esc="record.name.value"/>
                                     </span>
                                 </div>
 
-                                <div>
-                                    <span class="fa fa-building" aria-label="Nom tache" title="Task"/>
-                                    <field name="categ_id"/>
+                                <div attrs="{'invisible':[ '|', ('categ_id','!=', 6), ('permis', '=', False)]}">
+                                    <span class="fa fa-folder-o" aria-label="Permis"/>
+                                    <field name="permis"/>
+                                </div>
+
+                                <div attrs="{'invisible':[('categ_id','!=', 6)]}">
+                                    <span class="fa fa-dashboard" aria-label="Statut"/>
+                                    <field name="state"/>
+                                </div>
+
+                                <div attrs="{'invisible':[ '|', ('categ_id','!=', 6), ('remarque', '=', False)]}">
+                                    <span class="fa fa-exclamation-triangle" aria-label="Remarque"/>
+                                    <field name="remarque"/>
+                                </div>
+
+                                <div attrs="{'invisible':[ '|', ('categ_id','!=', 6), ('date_p', '=', False)]}">
+                                    <span class="fa fa-caret-right" aria-label="Date 1ere soumission"/>
+                                    <field name="date_p"/>
+                                </div>
+
+                                <div attrs="{'invisible':[ '|', ('categ_id','!=', 6), ('date_remis', '=', False)]}">
+                                    <span class="fa fa-spinner" aria-label="Date Suivi"/>
+                                    <field name="date_remis"/>
+                                </div>
+
+                                <div attrs="{'invisible':[ '|', ('categ_id','!=', 6), ('date_construt', '=', False)]}">
+                                    <span class="fa fa-building-o" aria-label="Date Construction"/>
+                                    <field name="date_construt"/>
+                                </div>
+
+                                <div attrs="{'invisible':[('categ_id','=', 6)]}">
+                                    <span class="o_text_overflow text-center" style="font-size: 18px;">
+                                        <t t-esc="record.categ_id.value"/>
+                                    </span>
+                                </div>
+
+                                <div attrs="{'invisible':[('categ_id','=', 6)]}">
+                                    <span class="fa fa-folder-open-o" aria-label="Nom tache" title="Task"/>
+                                    <field name="kit_id"/>
+                                </div>
+
+                                <div attrs="{'invisible':[('categ_id','=', 6)]}">
+                                    <span class="fa fa-tag" aria-label="Nom tache" title="Task"/>
+                                    <field name="product_id"/>
                                 </div>
 
                                 <div t-if="record.date_end.raw_value or record.date_start.raw_value"
-                                     class="text-muted o_row">
+                                     class="text-muted o_row" attrs="{'invisible':[('categ_id','=', 6)]}">
                                     <span class="fa fa-clock-o mr-2" title="Dates"/>
                                     <field name="date_start"/>
                                     <i t-if="record.date_end.raw_value and record.date_start.raw_value"
@@ -94,113 +123,11 @@
                                            domain="[('id', 'in', employee_ids_correction)]"/>
                                 </div>
 
-                                <div class="text-right" attrs="{'invisible':[('state_prod','!=','affect')]}">
-                                    <button name="start_work" string="Commencer" type="object"
-                                            class="oe_kanban_button_start"/>
-                                </div>
-
-                                <div class="button_container">
-                                    <button name="view_product" string="Liste des Services" type="object"
-                                            class="oe_kanban_button_info"/>
-
-
-                                    <button name="action_affect_production" string="Affecter Production" type="object"
-                                            class="oe_kanban_button_affect"/>
-                                    <button name="action_affect_controle" string="Affecter Contrôle" type="object"
-                                            class="oe_kanban_button_affect_ctrl"/>
-                                    <button name="action_affect_correction" string="Affecter Correction" type="object"
-                                            class="oe_kanban_button_affect_corr"
-                                    />
-                                    <!--                                    attrs="{'invisible':[ '|' ,('state_prod','!=','valid'),('stage','=','prod')]}"-->
-
-                                </div>
-
 
                             </div>
                         </t>
                     </templates>
                 </kanban>
-            </field>
-        </record>
-        <record id="view_task_timeline" model="ir.ui.view">
-            <field name="model">project.task.work</field>
-            <field name="type">timeline</field>
-            <field name="arch" type="xml">
-                <timeline date_start="date_start"
-                          date_stop="date_end"
-                          project_id="project_id"
-                          string="Tasks"
-                          default_group_by="project_id"
-                          event_open_popup="true"
-                          zoomKey="ctrlKey"
-                          colors="#959291:state == 'draft';
-                                    #5e98e3:state == 'affect';
-                                    #5e98e3:state =='tovalid';
-                                    #5e98e3:state =='validprod';
-                                    #ecf161:state == 'affect_con';
-                                    #ecf161:state =='tovalidcont';
-                                    #ecf161:state =='validcont';
-                                    #5ee378:state == 'affect_corr'
-                                    #5ee378:state =='tovalidcorrec';
-                                    #5ee378:state =='validcorrec'">
-                    <field name="name"/>
-                    <field name="employee_ids_production"/>
-                    <field name="employee_ids_controle"/>
-                    <field name="employee_ids_correction"/>
-                    <field name="product_id"/>
-
-                    <templates>
-                        <div t-name="timeline-item">
-                            <span>
-                                <div t-esc="record.name"/>
-
-                                <div>
-                                    <t t-foreach="record.employee_ids_production" t-as="employee">
-                                        <img
-                                                t-if="record.employee_ids_production"
-                                                t-attf-src="/web/image/hr.employee/#{employee}/image_128/16x16"
-                                                t-att-title="record.employee"
-                                                width="16"
-                                                height="16"
-                                                class="mr8"
-                                                alt="Employee"
-                                        />
-                                    </t>
-                                </div>
-
-                                <div>
-                                    <t t-foreach="record.employee_ids_controle" t-as="employee">
-                                        <img
-                                                t-if="record.employee_ids_controle"
-                                                t-attf-src="/web/image/hr.employee/#{employee}/image_128/16x16"
-                                                t-att-title="record.employee"
-                                                width="16"
-                                                height="16"
-                                                class="mr8"
-                                                alt="Employee"
-                                        />
-                                    </t>
-                                </div>
-
-                                <div>
-                                    <t t-foreach="record.employee_ids_correction" t-as="employee">
-                                        <img
-                                                t-if="record.employee_ids_correction"
-                                                t-attf-src="/web/image/hr.employee/#{employee}/image_128/16x16"
-                                                t-att-title="record.employee"
-                                                width="16"
-                                                height="16"
-                                                class="mr8"
-                                                alt="Employee"
-                                        />
-                                    </t>
-                                </div>
-                            </span>
-
-                        </div>
-
-                    </templates>
-                </timeline>
             </field>
         </record>
 
@@ -209,118 +136,44 @@
             <field name="model">project.task.work</field>
             <field name="arch" type="xml">
                 <tree string="Tâches" default_order="project_id,sequence,name"
-                      js_class="task_work.custom_task_work_renderer">
-                    <field name="sequence" string="Séq" readonly="1" invisible="1"/>
-                    <field name="id" string="id" readonly="1"/>
-                    <field name="pos" string="Pos" invisible="1"/>
-                    <field name="pr_project_id" string="Parent PR" invisible="1"/>
+                      js_class="task_work.custom_task_work_renderer"
+                      create="0">
                     <field name="categ_id" string="Département" readonly="1"/>
                     <field name="project_id" string="Projet" readonly="1"/>
-                    <field name="task_id" string="Tache" invisible="1"/>
-                    <field name="kit_id" string="Nom Kit"/>
-                    <field name="is_copy" readonly="1" string="Duplic.?" invisible="1"/>
+                    <field name="name" string="Nom Tache"/>
                     <field name="product_id" string="Type de Service"/>
-                    <field name="name" string="Libellé Travaux" readonly="1"/>
-                    <!--                <field name="zone" string="Zone " readonly="1" invisible="1"/>-->
-                    <!--                <field name="secteur" string="Sect" readonly="1" invisible="1"/>-->
-                    <!--                <field name="zo" string="Zone " readonly="1" invisible="1"/>-->
-                    <!--                <field name="sect" string="Sect" readonly="1" invisible="1"/>-->
-                    <!--                <field name="etape" string="Etape" readonly="1" invisible="1"/>-->
-
-                    <field name="date_start" string="Date Déb." readonly="1"/>
-                    <field name="date_end" string="Date Fin" readonly="1"/>
-                    <field name="color" string="Nb Jrs Prév." required="1" invisible="1"/>
-                    <field name="hours" string="Nb Hrs Prév." required="1"/>
-                    <field name="issue_id" string="Date Fin Prévue" invisible="1"/>
-                    <field name="line_ids" string="Date Fin Prévue" invisible="1"/>
-
-                    <field name="gest_id"
-                           string="Super" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                           readonly="1"/>
-                    <field name="reviewer_id1"
-                           string="Super" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                           readonly="1"/>
-                    <field name="gest_id3"
-                           string="Coord" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                           readonly="1"/>
-
-                    <field name="coordin_id1"
-                           string="Coord1" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                           invisible="1"
-                           readonly="1"/>
-                    <field name="coordin_id2"
-                           string="Coord2" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                           invisible="1" readonly="1"/>
-
-                    <field name="coordin_id3"
-                           invisible="1"
-                           string="Coord3" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                           readonly="1"/>
-                    <field name="employee_id" string="Ressource affectée" invisible="1"/>
-
-
-                    <field name="employee_id" string="Ressource affectée" invisible="1"/>
-                    <field name="employee_ids_production" widget="many2many_avatar_employee"
+                    <field name="employee_ids_production" string="Production" widget="many2many_avatar_employee"
                            options="{'no_create': True}" domain="[('id', 'in', employee_ids_production)]"/>
-                    <field name="employee_ids_controle" widget="many2many_avatar_employee"
+                    <field name="employee_ids_controle" string="Contrôle" widget="many2many_avatar_employee"
                            options="{'no_create': True}" domain="[('id', 'in', employee_ids_controle)]"/>
-                    <field name="employee_ids_correction" widget="many2many_avatar_employee"
+                    <field name="employee_ids_correction" string="Correction" widget="many2many_avatar_employee"
                            options="{'no_create': True}" domain="[('id', 'in', employee_ids_correction)]"/>
-                    <!--                    <field name="affect_emp" string="Aff. Employés"/>-->
-                    <!--                    <field name="affect_emp" string="Aff. Employés"/>-->
-                    <!--                    <field name="affect_con" string="Aff. Controle"/>-->
-                    <!--                    <field name="affect_cor" string="Aff. Correction"/>-->
-                    <button name="action_affect" string="" type="object" invisible="1"
-                            help="Affecter ressource"
-                            icon="fa-plus">
-                    </button>
-                    <field name="affect_emp_list" string="Aff. Employés id" invisible="1"/>
-                    <field name="affect_con_list" string="Aff. Con id" invisible="1"/>
-                    <field name="affect_cor_list" string="Aff. Corr id" invisible="1"/>
-                    <field name="r_id" string="Risk" invisible="1"/>
-                    <field name="paylist_id" string="Facture"
-                           options="{'no_create': True, 'no_create_edit':True,'no_open':True}" invisible="1"/>
-                    <field name="done" string="Libellé " readonly="1" invisible="1"/>
-                    <field name="done1" string="Libellé " readonly="1" invisible="1"/>
                     <field name="done2" string="Libellé " readonly="1" invisible="1"/>
                     <field name="done3" string="Libellé " readonly="1" invisible="1"/>
                     <field name="done4" string="Libellé " readonly="1" invisible="1"/>
                     <field name="is_intervenant" string="Libellé " readonly="1" invisible="1"/>
                     <field name="is_control" string="Libellé " readonly="1" invisible="1"/>
                     <field name="is_correction" string="Libellé " readonly="1" invisible="1"/>
-                    <field name="done33" string="Libellé " readonly="1" invisible="1"/>
-                    <field name="poteau_i" string="Qté T. Prévue" readonly="1" invisible="1"/>
-                    <field name="poteau_da" string="Qté Déja Affect." readonly="1" invisible="1"/>
-                    <field name="poteau_ra" string="Qté Non Affect." readonly="1" invisible="1"/>
-                    <field name="poteau_t" string="Qté Ddée" readonly="1" invisible="1"/>
-                    <field name="uom_id" string="Unité" required="0" invisible="1"/>
-                    <field name="risk" string="risk" required="1" invisible="1"/>
-                    <field name="hours_r" string="Nb Hrs Réal." required="1" invisible="1"/>
-                    <!--                <field name="poteau_r" string="Qté Réal." required="1"/>-->
-                    <!--                <field name="poteau_r" string="Qté Réal." required="1"/>-->
-                    <!--                <field name="total_r" string="Cout Réal" required="1"/>-->
                     <field name="state" string="Etat"/>
                     <field name="display" string="display" invisible="1"/>
-
-
+                    <field name="can_affect" invisible="1"/>
+                    <button name="action_affect" string="" type="object" invisible="1"
+                            help="Affecter ressource" icon="fa-users"
+                            attrs="{'invisible': [('can_affect', '=', False)]}"/>
                     <button name="action_open_histo" string="" type="object" invisible="1"
-                            help="Consulter Historique Tache"
-                            icon="fa-history">
-                    </button>
-
+                            help="Consulter Historique Tache" icon="fa-history"/>
                     <button name="action_open_task" string="" help="Consulter/Editer Tache" type="object"
                             icon="fa-pencil"/>
                     <button name="project_open" string="" help="Consulter Projet" type="object" icon="fa-list"/>
-                    <button name="action_open_flow" string="Consulter Workflow" type="object" icon="fa:sort-desc"
+                    <button name="action_open_flow" help="Consulter Workflow" type="object" icon="fa-random"
                             attrs="{'invisible': [('done4','=', False)]}"/>
                     <button name="action_open_group2" string="" help="Consulter Retours Bons" type="object"
                             class="fa fa-check"
                             attrs="{'invisible': [('is_intervenant','=', False)]}"/>
-                    <button name="action_open_group3" string="" help="Consulter Retours Bonn controle" type="object"
+                    <button name="action_open_group3" string="" help="Consulter Retours Bons controle" type="object"
                             icon="fa-check-square-o" attrs="{'invisible': [('is_control','=', False)]}"/>
                     <button name="action_open_group4" string="" help="Consulter Retours Bons correction" type="object"
                             icon="fa-check-circle" attrs="{'invisible': [('is_correction','=', False)]}"/>
-
                     <button name="action_open_group" string="Consulter la F.T/Facture" type="object" icon="fa:indent"
                             attrs="{'invisible': [('done2','=', False)]}"/>
                     <button name="lister_intervenant" string="" help="Liste des assignés" type="object"
@@ -343,11 +196,12 @@
             <field name="name">task.work.form</field>
             <field name="model">project.task.work</field>
             <field name="arch" type="xml">
-                <form>
+                <form create="0">
                     <sheet string="Task">
                         <header>
                             <button name="action_affect" type="object" string="Affecter Ressource" class="oe_highlight"
-                                    confirm="Ouvrir l'interface Affectation?" states="draft"/>
+                                    confirm="Ouvrir l'interface Affectation?"
+                                    attrs="{'invisible': [('can_affect', '=', False)]}"/>
                             <button name="button_write1" type="object" string="Validation Travaux" class="oe_highlight"
                                     confirm="Enregistrer Les Travaux et Envoyer au Superviseur pour Approbation?"
                                     states="affect" invisible="1"/>
@@ -363,9 +217,9 @@
 
                             <field name="state" widget="statusbar" statusbar_visible="draft,affect"/>
                         </header>
-                        <group string="Travaux Prévus">
+                        <group string="Travaux Prévus" attrs="{'invisible': [('categ_id', '=', 6)]}">
                             <group>
-                                <field name="pr_project_id" invisible="1"/>
+                                <field name="can_affect" invisible="1"/>
                                 <field name="sequence" readonly="1"/>
                                 <field name="project_id" widget="selection" string="Projet" readonly="1"/>
                                 <field name="task_id" widget="selection" invisible="1"/>
@@ -418,10 +272,74 @@
                                 </group>
                             </group>
                         </group>
-                        <group>
-                            <field name="link_ids" string="Liens Ftp">
+                        <group string="Travaux Prévus-Permis" attrs="{'invisible': [('categ_id', '!=', 6)]}">
+                            <group>
+                                <field name="sequence" readonly="1"/>
+                                <field name="project_id" widget="selection" string="Projet" readonly="1"/>
+                                <field name="zo" string="Zone" readonly="1"/>
+                                <field name="sect" string="Secteur" readonly="1"/>
+                                <field name="task_id" widget="selection" invisible="1"/>
+                                <field name="product_id" string="Tache" readonly="1" invisible="1"/>
+                                <field name="name" string="Decription Tache" readonly="1"/>
+                                <field name="id" invisible="1"/>
+                                <field name="gest_id" string="Superviseur" widget="selection" required="1"/>
+                                <field name="employee_id" string="Ressource affectée" widget="selection" readonly="1"/>
+                                <newline/>
+                                <!--                                <button name="action_calendar" type="object" string="" icon="terp-calendar"-->
+                                <!--                                        class="btn-primary"/>-->
+                                <newline/>
+                                <field name="state_id" string="Municipalités" required="0"
+                                       options="{'no_create': True, 'no_create_edit':True}"
+                                       on_change="onchange_munic(state_id)" readonly="0"/>
+                                <field name="city" string="Région" required="0" readonly="0"/>
+
+
+                                <field name="date_start" string="Date Prévue" widget="date"
+                                       on_change="onchange_date_to(date_end,date_start)" readonly="0"/>
+                                <field name="date_end" string="Date Fin" widget="date"
+                                       on_change="onchange_date_to(date_end,date_start)" readonly="0"/>
+                                <field name="color" string="Durée(Jours)" readonly="1"/>
+
+                                <field name="poteau_r" string="Qté" readonly="1"/>
+                                <newline/>
+                                <!--                                <button name="sub_proj_create" type="object" string="" icon="terp-document-new"-->
+                                <!--                                        class="btn-primary" help="Créer un sous projet"/>-->
+                                <newline/>
+                            </group>
+                            <group>
+                                <field name="precision" string="Précision" readonly="0"/>
+                                <field name="permis" string="Permis" readonly="0"/>
+                                <field name="statut" string="Statut du Permis" readonly="0"/>
+                                <field name="date_fin" string="Date Fin" readonly="0"/>
+                                <field name="prolong" string="Prolong." readonly="0"/>
+                                <field name="remarque" string="remarque" readonly="0"/>
+                                <field name="action" string="Action" readonly="0"/>
+                                <field name="date_p" string="Date 1ere Soumission" readonly="0"/>
+                                <field name="date_remis" string="Date Suivi" readonly="0"/>
+                                <field name="date_construt" string="Date Constr" readonly="0"/>
+                                <field name="secteur_en" string="Secteur Enfui" readonly="0"/>
+                                <field name="graphe_t_b" string="Graphe" readonly="0"/>
+                                <field name="dct" string="DCT" readonly="0"/>
+                                <field name="anomalie" string="Anomalie" readonly="0"/>
+
+
+                                <field name="user_id" string="USER" invisible="1"/>
+                                <field name="note" string="Note Interne" readonly="0"/>
+
+                            </group>
+
+                        </group>
+                        <group string="Actions Administrateurs">
+
+                            <field name="display" string="Réalisable" help="Décochoer si irréalisable!"
+                                   readonly="0"/>
+                            <field name="active" string="Actif" help="Décochoer si vous voulez archiver!"/>
+                        </group>
+
+                        <group string="Liens FTP">
+                            <field name="link_ids" string="Liens Ftp" nolabel="1">
                                 <tree editable="Bottom">
-                                    <field name="ftp" string="Lien Ftp"/>
+                                    <field name="ftp" string="Lien Ftp" widget="url" clickable="True"/>
                                     <field name="name" string="Description" readonly="0"/>
                                     <field name="source" string="Type"/>
                                 </tree>
@@ -483,6 +401,25 @@
             </field>
         </record>
 
+        <!--        <record id="view_task_work_gantt" model="ir.ui.view">-->
+        <!--            <field name="name">task.work.gantt</field>-->
+        <!--            <field name="model">project.task.work</field>-->
+        <!--            <field name="arch" type="xml">-->
+        <!--                <webganttview-->
+        <!--                        date_start='date_start'-->
+        <!--                        date_stop='date_end'-->
+        <!--                        color='color'-->
+        <!--                        round_dnd_dates='false'-->
+        <!--                        default_group_by='project_id'-->
+        <!--                        default_scale='month'-->
+        <!--                        show_links='false'-->
+        <!--                        progress='progress'-->
+        <!--                        link_model='project.task.work.link'-->
+        <!--                        priority='task_priority'-->
+        <!--                />-->
+        <!--            </field>-->
+        <!--        </record>-->
+
         <record id="view_task_work_search" model="ir.ui.view">
             <field name="name">task.work.search</field>
             <field name="model">project.task.work</field>
@@ -498,10 +435,13 @@
                     </group>
                     <searchpanel view_types="tree,kanban">
                         <field name="partner_id" icon="fa-user" hierarchize="1" enable_counters="1"/>
-                        <field name="pr_project_id" icon="fa-building" enable_counters="1" select="multi"
-                               hierarchize="1"/>
+                        <!--                        <field name="pr_project_id" icon="fa-building" enable_counters="1" select="multi"-->
+                        <!--                               hierarchize="1"-->
                         <!--                               domain="[('partner_id', '=', partner_id),('parent_id1', '=', False)]"/>-->
-                        <field name="project_id" icon="fa-building" enable_counters="1" select="multi" hierarchize="1"/>
+                        <field name="project_id" icon="fa-building" enable_counters="1" select="multi" hierarchize="1"
+                               domain="[('partner_id', '=', partner_id)]"/>
+                        <!--                        domain="[('parent_id1', '=', pr_project_id)]"/>-->
+
                         <field name="categ_id" icon="fa-building" enable_counters="1" hierarchize="1"/>
                         <field name="product_id" icon="fa-tag" enable_counters="1" select="multi"
                                domain="[('categ_id', '=', categ_id)]"/>
@@ -515,10 +455,13 @@
             <field name="name">Tâches</field>
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">project.task.work</field>
-            <field name="view_mode">kanban,timeline,tree,calendar,form</field>
-            <field name="domain">[('nature_tache', '=', 'prod'), ('pos', '=', 1)]</field>
-
+            <field name="view_mode">tree,kanban,calendar,form</field>
             <field name="context">{}</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'kanban', 'view_id': ref('task_work.view_task_work_kanban')}),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_task_work_tree')}),
+                (0, 0, {'view_mode': 'calendar', 'view_id': ref('task_work.view_task_work_calendar')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('task_work.view_task_work_form')})]"/>
         </record>
     </data>
 </odoo>

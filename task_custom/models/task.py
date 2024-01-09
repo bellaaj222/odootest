@@ -122,6 +122,7 @@ class TaskCustom(models.Model):
                 if task.project_id.active == False or task.project_id.state == 'template':
                     task.active = False
 
+    qte_permis = fields.Integer(string='N.U - Qté', default=1)
     is_super_admin = fields.Boolean(string='Is Admin', compute='_compute_is_super_admin')
     active = fields.Boolean(compute='_is_template', store=True, string='Not a Template Task', type='boolean',
                             help="This field is computed automatically and have the same behavior than the boolean "
@@ -152,8 +153,6 @@ class TaskCustom(models.Model):
     write_date = fields.Datetime(string='Last Modification Date', index=True, readonly=True,
                                  states={'draft': [('readonly', False)]}, )
     # not displayed in the view but it might be useful with base_action_rule module (and it needs to be defined first for that)
-    date_start_s = fields.Date(string='Date Début Etape')
-    date_end_s = fields.Date(string='Date Fin Etape')
     date_start = fields.Date(string='Date Début', index=True, copy=True, readonly=True,
                              states={'draft': [('readonly', False)]}, )
     date_end = fields.Date(string='Date Fin', index=True, copy=True, readonly=True,
@@ -294,7 +293,6 @@ class TaskCustom(models.Model):
     progress_amount = fields.Float(compute='_get_progress_amount', string='% Dépense')
     rank = fields.Char(string='Séq', readonly=True, states={'draft': [('readonly', False)]}, )
     display = fields.Boolean(string='Color Index')
-    step_id = fields.Many2one('product.step', string='Etape')
 
     # 'manager_id': fields.related('project_id', 'analytic_account_id', 'user_id', type='many2one',
     #                              relation='res.users', string='Project Manager')
@@ -303,11 +301,6 @@ class TaskCustom(models.Model):
     # 'delegated_user_id': fields.related('child_ids', 'user_id', type='many2one', relation='res.users',
     #                                     string='Delegated To',
     #                                   , )
-
-    @api.onchange('step_id')
-    def _onchange_step_id(self):
-        for rec in self:
-            rec.name = rec.step_id.name
 
     # To check
     @api.onchange('product_id')

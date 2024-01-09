@@ -1,4 +1,4 @@
-<odoo>
+﻿<odoo>
     <data>
         <record id="view_facture_form" model="ir.ui.view">
             <field name="name">facture.form</field>
@@ -20,6 +20,8 @@
                     </header>
                     <group string="Filtre de Recherche des Factures/F.T">
                         <group>
+                            <field name="is_super_admin" invisible="1"/>
+                            <field name="is_owner" invisible="1"/>
                             <field name="employee_id" string="Bénéficiaire"
                                    options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                    readonly="1"/>
@@ -45,18 +47,25 @@
                             <field name="done1" string="done1" invisible="1"/>
                         </group>
                     </group>
-                    <notebook>
+                    <notebook attrs="{'invisible': [('is_owner', '=', False), ('is_super_admin', '=', False)]}">
                         <page string="Bons A déclarer">
                             <group>
                                 <group>
                                     <button name="button_preview" string="Aperçu" type="object" class="oe_highlight"
-                                            icon="fa-find"/>
-                                    <button name="load_" string="Charger Mes Bons Réalisés" type="object"
-                                            class="oe_highlight" icon="fa-thin fa-arrow-down-to-line"/>
+                                            icon="fa-search"/>
+                                    <button name="load_" string="Charger / Actualiser" type="object"
+                                            class="oe_highlight" icon="fa-download"/>
+                                </group>
+                                <group>
+                                    <button name="filter_" string="Filter Mes Bons" type="object"
+                                            class="oe_highlight" icon="fa-filter"/>
                                 </group>
                                 <newline/>
-                                <field name="line_ids2" nolabel="1" context="{'default_employee_id':employee_id}">
-                                    <tree editable="Bottom" colors="purple:done== True;">
+                                <field name="line_ids2" nolabel="1" context="{'default_employee_id':employee_id}"
+                                       attrs="{'readonly': [('state', '!=', 'draft'), ('is_super_admin', '=', False)]}">
+                                <tree editable="Bottom" colors="purple:done== True;"
+                                          decoration-danger="state_bon == 'pending'"
+                                          decoration-success="state_bon == 'valid'">
                                         <field name="employee_id" string="min_id"
                                                invisible="1"/>
                                         <field name="product_id"
@@ -72,9 +81,9 @@
                                                options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
                                                attrs="{'readonly': [('done','=', False)]}"/>
                                         <field name="done" string="min_id" invisible="1"/>
-                                        <field name="zone" string="Zone" invisible="0"
+                                        <field name="zone" string="Zone"
                                                attrs="{'readonly': [('done','=', False)]}"/>
-                                        <field name="secteur" string="Secteur" invisible="0"
+                                        <field name="secteur" string="Secteur"
                                                attrs="{'readonly': [('done','=', False)]}"/>
                                         <field name="date_start_r" string="Date Début" widget="date"
                                                attrs="{'readonly': [('done','=', False)]}"/>
@@ -84,8 +93,8 @@
                                         <field name="name" string="Notes"
                                                attrs="{'readonly': [('done','=', False)]}"/>
                                         <field name="color1" string="Durée(Jours)" sum="Prev Hours" invisible="1"/>
-                                        <field name="hours_r" string="Durée(Heurs)" widget="float_time"
-                                               sum="Prev Hours" attrs="{'readonly': [('done','=', False)]}"/>
+                                        <field name="hours_r" string="Durée(Heurs)" sum="Prev Hours"
+                                               attrs="{'readonly': [('done','=', False)]}" widget="float_time"/>
                                         <field name="poteau_r" string="Qté/Unité" sum="Prev Hours" widget="char"
                                                attrs="{'readonly': [('done','=', False)]}"/>
                                         <field name="uom_id" invisible="1"/>
@@ -94,16 +103,22 @@
                                                attrs="{'readonly': [('done','=', False)]}"/>
                                         <field name="wage" string="T.H" readonly="1"/>
                                         <field name="amount_line" string="Total" sum="Prev Hours" readonly="1"/>
+                                        <field name="state_bon" readonly="1"/>
+                                        <button name="open_declaration_bon" type="object"
+                                                icon="fa-expand"
+                                                attrs="{'invisible': [('line_id','=', False)]}"/>
+                                        <field name="line_id" invisible="1"/>
                                         <field name="state" string="line" invisible="1"/>
                                         <field name="send" string="Notes" invisible="1"/>
-<!--                                        <button name="" string="Bons Validés" type="object" icon="STOCK_APPLY"-->
-<!--                                                attrs="{'invisible': [('send','=', False)]}" readonly="1"/>-->
+                                        <!--                                            <button name="" string="Bons Validés" type="object" icon="STOCK_APPLY"-->
+                                        <!--                                                    attrs="{'invisible': [('send','=', False)]}" readonly="1"/>-->
                                         <field name="work_id" string="line" invisible="1"/>
                                         <field name="done" string="T" invisible="1"/>
                                     </tree>
                                 </field>
                                 <group class="oe_subtotal_footer oe_right" colspan="2" name="sale_total">
-                                    <button name="button_save_" type="object" string="Calculer" icon="fa-light fa-calculator"
+                                    <button name="button_save_" type="object" string="Calculer"
+                                            icon="fa-light fa-calculator"
                                             class="oe_highlight"/>
                                     <newline/>
                                     <field name="amount_untaxed" widget="monetary"
@@ -134,7 +149,7 @@
                                            options="{'no_create': True}"/>
                                     <newline/>
                                     <button name="button_load_mail" type="object" string=""
-                                            icon="gtk-leave-fullscreen" class="btn-primary"/>
+                                            icon="fa-envelope-o" class="btn-primary"/>
                                     <newline/>
                                     <field name="employee_ids1" string="CC" widget='many2many_tags'
                                            options="{'no_create': True}"/>
@@ -173,14 +188,30 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">bon.show</field>
             <field name="view_mode">tree,form</field>
-            <field name="context">{}</field>
+            <field name="context">{'default_type': 'Facture'}</field>
+            <field name="domain">[('type','=', 'Facture')]</field>
             <field name="view_ids" eval="[(5, 0, 0),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('bon_show.view_facture_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('bon_show.view_facture_form')})]"/>
         </record>
 
-        <menuitem id="menu_facture" name="Factures" sequence="50" parent="project_custom.menu_project"
+        <menuitem id="menu_facture" name="Factures" sequence="40" parent="project_custom.menu_project"
                   action="action_facture"/>
+
+        <record id="action_facture_sa" model="ir.actions.act_window">
+            <field name="name">Factures (S.A)</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">bon.show</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{'default_type': 'Facture'}</field>
+            <field name="domain">[('type','=', 'Facture')]</field>
+            <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('bon_show.view_facture_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('bon_show.view_facture_form')})]"/>
+        </record>
+
+        <menuitem id="menu_facture_sa" name="Factures (S.A)" sequence="45" parent="project_custom.menu_project"
+                  action="action_facture_sa"/>
 
     </data>
 </odoo>

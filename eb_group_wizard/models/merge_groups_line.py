@@ -114,12 +114,12 @@ class MergegroupsLine(models.Model):
             'domain': []
         }
 
-    @api.onchange('date_start_r', 'date_end_r', 'employee_id')
-    def onchange_date_to_(self, date_to, date_from, employee_id, ):
-        """
-        Update the number_of_days.
-        """
-        print('onchange_date_to_')
+    # @api.onchange('date_start_r', 'date_end_r', 'employee_id')
+    # def onchange_date_to_(self, date_to, date_from, employee_id, ):
+    #     """
+    #     Update the number_of_days.
+    #     """
+    #     print('onchange_date_to_')
         # result = {'value': {}}
         # if date_to:
         #     if str(date_to) > str(fields.Date.today()):

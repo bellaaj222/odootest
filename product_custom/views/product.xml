@@ -50,14 +50,14 @@
             <field name="arch" type="xml">
                 <tree string="Product Variants" editable="bottom">
                     <field name="id" string="ID"/>
-                    <field name="default_code" string="Code" required="1"/>
-                    <field name="name" default_focus="1" placeholder="Name" string="Nom Service" required="1"/>
-                    <field name="categ_id" string="Affection Département" required="1"/>
+                    <field name="default_code" string="Code"/>
+                    <field name="name" default_focus="1" placeholder="Name" string="Nom Service"/>
+                    <field name="categ_id" string="Affection Département"/>
                     <field name="attribute_value_ids" widget="many2many_tags" invisible="1"/>
                     <field name="lst_price" invisible="1"/>
                     <field name="price" invisible="1"/>
-                    <field name="uom_id" string="Unité Gestion Interne" required="1"/>
-                    <field name="uos_id" string="Unité Gestion Externe" required="1"/>
+                    <field name="uom_id" string="Unité Gestion Interne"/>
+                    <field name="uos_id" string="Unité Gestion Externe"/>
                     <field name="ean13" invisible="1"/>
                     <field name="is_devide" string="Est Divisible?"/>
                     <field name="is_load" string="Est généné?"/>

@@ -8,7 +8,6 @@ class BaseGroupMergeLine2(models.Model):
     _description = 'Base Group Merge Line'
     _order = 'min_id asc'
 
-    pos = fields.Integer(string='Position dans le kit')
     wiz_id = fields.Many2one('base.task.merge.automatic.wizard', string='Wizard')
     r_id = fields.Many2one('risk.management.category', string='Wizard')
     min_id = fields.Integer(string='Wizard')
@@ -19,7 +18,6 @@ class BaseGroupMergeLine2(models.Model):
     line_id = fields.Many2one('project.task.work.line', string='Wizard')
     project_id = fields.Many2one('project.project', string='Wizard')
     task_id = fields.Many2one('project.task', string='Wizard')
-    step_id = fields.Many2one('product.step', string='Etape')
     categ_id = fields.Many2one('product.category', string='Tags')
     product_id = fields.Many2one('product.product', string='Tags')
     work_id = fields.Many2one('project.task.work', string='Wizard')
@@ -44,8 +42,8 @@ class BaseGroupMergeLine2(models.Model):
     poteau_reste = fields.Float(string='Time Spent')
     sequence = fields.Integer(string='Sequence')
     is_service = fields.Boolean(string='serv')
-    zone = fields.Char(string='Color Index')
-    secteur = fields.Char(string='Color Index')
+    zone = fields.Integer(string='Color Index')
+    secteur = fields.Integer(string='Color Index')
     state = fields.Selection([
         ('draft', 'T. Planifiés'),
         ('affect', 'T. Affectés'),

@@ -4,15 +4,14 @@
             <field name="name">project.task.tree</field>
             <field name="model">project.task</field>
             <field name="arch" type="xml">
-                <tree default_order="project_id,sequence,name">
+                <tree default_order="project_id,sequence,name" create="0">
                     <field name="sequence" readonly="1" string="Séq"/>
                     <field name="id" readonly="1" string="ID"/>
                     <field name="project_id"/>
                     <field name="categ_id" string="Départ." readonly="1"/>
-                    <field name="name" string="Type de Service" readonly="1"/>
-                    <field name="etape" string="Etape" readonly="1"/>
-                    <field name="date_start" string="Date Début" widget="date"
-                           required="1"/>
+                    <field name="name" string="Libellé" readonly="1"/>
+                    <field name="etape" string="Etape" readonly="1" invisible="1"/>
+                    <field name="date_start" string="Date Début" widget="date" required="1"/>
                     <field name="date_end" string="Date Fin" widget="date"/>
                     <field name="color" string="D.(Jr)" sum="Total"/>
                     <field name="reviewer_id" string="Super." widget="selection"/>
@@ -34,7 +33,7 @@
             <field name="name">project.task.form</field>
             <field name="model">project.task</field>
             <field name="arch" type="xml">
-                <form>
+                <form create="0">
                     <sheet>
                         <group>
                             <group>
@@ -85,13 +84,7 @@
             <field name="type">ir.actions.act_window</field>
             <field name="res_model">project.task</field>
             <field name="view_mode">tree,form</field>
-            <field name="domain">[('project_id.is_template', '=', False)]</field>
             <field name="context">{}</field>
-            <field name="help" type="html">
-                <p class="o_view_nocontent_smiling_face">
-                    Create your first project task !
-                </p>
-            </field>
             <field name="view_ids" eval="[(5, 0, 0),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('task_custom.view_task_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('task_custom.view_task_form')})]"/>

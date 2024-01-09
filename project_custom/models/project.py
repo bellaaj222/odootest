@@ -208,22 +208,16 @@ class ProjectCustom(models.Model):
         for record in self:
             record.is_admin = self.env.user.has_group('project_custom.group_admin')
 
-    web_diagram_id = fields.Many2one(
-        'web.diagram.plus', 'Project Diagram', ondelete='cascade',
-        required=True, index=True)
-    is_parent = fields.Boolean(string='Est Parent ?', default=False)
-    is_super_admin = fields.Boolean(string='Super Admin', compute='_compute_is_super_admin')
-    is_admin = fields.Boolean(string='Is Admin', compute='_compute_is_admin')
-    is_template = fields.Boolean(string='Template ?')
-    template_name = fields.Char(string='Nom du Template', readonly=True, states={'draft': [('readonly', False)]})
-    active = fields.Boolean(string='Active', readonly=True, states={'draft': [('readonly', False)]}, default=True, )
-    is_kit = fields.Boolean(string='Is Kit', readonly=True, states={'draft': [('readonly', False)]}, default=True, )
     priority = fields.Selection([('0', 'Faible'),
                                  ('1', 'Normale'),
                                  ('2', 'Elevée'),
                                  ('3', 'Urgent'),
                                  ('4', 'Très Urgent'),
                                  ('5', 'Super Urgent')], string='Priorité', default=0)
+    is_super_admin = fields.Boolean(string='Super Admin', compute='_compute_is_super_admin')
+    is_admin = fields.Boolean(string='Is Admin', compute='_compute_is_admin')
+    active = fields.Boolean(string='Active', readonly=True, states={'draft': [('readonly', False)]}, default=True, )
+    is_kit = fields.Boolean(string='Is Kit', readonly=True, states={'draft': [('readonly', False)]}, default=True, )
     sequence = fields.Integer(string='Sequence', help="Gives the sequence order when displaying a list of Projects.",
                               readonly=True, states={'draft': [('readonly', False)]}, default=10000, )
     bord = fields.Char(string='N° PO', readonly=True, states={'draft': [('readonly', False)]}, )
@@ -245,7 +239,7 @@ class ProjectCustom(models.Model):
     partner_id2 = fields.Many2one('res.partner', string='Customer')
     comment = fields.Char(string='Comment', readonly=True, states={'draft': [('readonly', False)]}, )
     npc = fields.Char(string='N° Project Client', readonly=True, states={'draft': [('readonly', False)]}, )
-    note = fields.Text(string='Note', readonly=True, states={'draft': [('readonly', False)]})
+    note = fields.Text(string='Note', readonly=True, states={'draft': [('readonly', False)]}, )
     number = fields.Char(string='N°', size=64, readonly=True, states={'draft': [('readonly', False)]}, )
     analytic_account_id = fields.Many2one('account.analytic.account', string='Contract/Analytic',
                                           help="Link this project to an analytic account if you need financial "
@@ -257,8 +251,7 @@ class ProjectCustom(models.Model):
                                  states={'draft': [('readonly', False)]}, copy=True)
     progress_amount = fields.Float(string='% Dépense', compute='_get_progress_amount')
     members = fields.Many2many('res.users', 'project_user_rel', 'project_id', 'uid', 'Project Members',
-                               help="Project's members are users who can have an access to the tasks related to this "
-                                    "project.",
+                               help="Project's members are users who can have an access to the tasks related to this project.",
                                states={'close': [('readonly', True)], 'cancelled': [('readonly', True)]})
     tasks = fields.One2many('project.task', 'project_id', string='Task Activities', readonly=True,
                             states={'draft': [('readonly', False)]}, copy=True)
@@ -313,8 +306,8 @@ class ProjectCustom(models.Model):
                                states={'draft': [('readonly', False)]}, )
     task_ids2 = fields.One2many('project.task', 'project_id')
     color = fields.Integer(string='Color Index', readonly=True, states={'draft': [('readonly', False)]}, )
-    parent_id = fields.Many2one('project.project', string='Parent ID', readonly=True,
-                                states={'draft': [('readonly', False)]}, )
+    parent_id = fields.Many2one('project.project', string='Project Parent', select=True, 
+                                  )
     date = fields.Date(string='date', readonly=True, states={'draft': [('readonly', False)]},
                        default=lambda *a: time.strftime('%Y-%m-%d'), )
     date_start = fields.Date(string='Date de Début', readonly=True, states={'draft': [('readonly', False)]}, copy=True)
@@ -374,117 +367,25 @@ class ProjectCustom(models.Model):
                               ('pending', 'Suspendu'),
                               ('close', 'Terminé')],
                              string='Status', required=True, copy=False, default='draft')
-    zone = fields.Char(string='Zone', default='')
-    secteur = fields.Char(string='Secteur', default='')
+    zone = fields.Integer(string='Zone', default=0)
+    secteur = fields.Integer(string='Secteur', default=0)
     work_ids = fields.One2many('project.task.work', 'project_id', readonly=True,
                                states={'draft': [('readonly', False)]}, )
     work_line_ids = fields.One2many('project.task.work.line', 'project_id', readonly=True,
                                     states={'draft': [('readonly', False)]}, )
-    academic_ids = fields.One2many('hr.academic', 'project_id', string='Academic experiences',
-                                   help="Academic experiences")
+    academic_ids = fields.One2many('hr.academic', 'project_id', string='Academic experiences', help="Academic experiences")
     parent_id1 = fields.Many2one('project.project', string='Project Parent', select=True, ondelete='cascade',
                                  default=False, )
     child_ids = fields.One2many('project.project', 'parent_id1', string='Child Projects')
     doc_count = fields.Integer(compute='_get_attached_docs', string='Number of documents attached')
     name = fields.Char(required=False, string='Nom', )
     issue_ids = fields.One2many('project.issue', 'project_id')
-    # recently added :
-    step_count = fields.Integer(string='Nombre Etapes')
+
 
     _sql_constraints = [
         ('project_date_greater', 'check(date_end >= date_start)',
          'Error! Project start date must be before project end date.')
     ]
-
-    def unlink(self):
-        for rec in self:
-            if rec.state == 'open' and rec.is_template is True:
-                raise UserError(
-                    _('Action Impossible !\nImpossible de supprimer une Template Valide !'))
-
-        return super(ProjectCustom, self).unlink()
-
-    @api.model
-    def default_get(self, fields_list):
-        res = super(ProjectCustom, self).default_get(fields_list)
-        if self.env.context.get('action') == 'planning':
-            print('Planification')
-
-        elif self.env.context.get('action') == 'apply_template':
-            step_ids = self.env.context.get('step_ids')
-            step_count = len(step_ids)
-            task_ids = self.env.context.get('task_ids')
-            task_records = []
-
-            if task_ids:
-                for task_id in task_ids:
-                    task = self.env['project.task'].browse(task_id)
-                    kit_list = task.step_id.kit_ids
-                    for kit in kit_list:
-                        task_records.append((0, 0, {
-                            'step_id': task.step_id.id,
-                            'kit_id': kit.id,
-                            'categ_id': kit.categ_id.id,
-                            'name': task.name,
-                        }))
-                res.update({'task_ids': task_records, 'step_count': step_count})
-
-        return res
-
-    def button_divide(self):
-
-        return {
-            'name': 'Subdivision',
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'view_id': self.env.ref('eb_merge_task.base_task_merge_automatic_wizard_form_popup').id,
-            'target': 'new',
-            'res_model': 'base.task.merge.automatic.wizard',
-            'context': {'active_model': self._name,
-                        'task_ids': self.task_ids.ids,
-                        'partner_id': self.partner_id.id,
-                        'project_id': self.id},
-            'domain': []
-        }
-
-    def button_planning(self):
-
-        return {
-            'name': 'Planification',
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'view_id': self.env.ref('project_custom.project_planning_form').id,
-            'target': 'new',
-            'res_model': 'project.project',
-            'res_id': self.id,
-            'flags': {'initial_mode': 'edit'},
-            'context': {'action': 'planning'},
-            'domain': []
-        }
-
-    def button_apply(self):
-
-        step_ids = []
-        for task in self.task_ids:
-            if task.step_id.id not in step_ids:
-                step_ids.append(task.step_id.id)
-
-        return {
-            'name': 'Utiliser Template',
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'view_id': self.env.ref('project_custom.view_custom_project_form').id,
-            'target': 'current',
-            'res_model': 'project.project',
-            'flags': {'initial_mode': 'edit'},
-            'context': {'action': 'apply_template',
-                        'task_ids': self.task_ids.ids,
-                        'step_ids': step_ids},
-            'domain': []
-        }
 
     def action_open_project(self):
 
@@ -553,11 +454,11 @@ class ProjectCustom(models.Model):
 
         return self.write({'state': 'draft'})
 
-    def set_done(self):
-        self.env.cr.execute('update project_task_work set  ex_state=state where project_id =%s', (self.ids[0],))
-        self.env.cr.execute('update project_task set  state=%s where project_id =%s', ('close', self.ids[0]))
-        self.env.cr.execute('update project_task_work set  state=%s where project_id =%s', ('valid', self.ids[0]))
-        return self.write({'state': 'close'})
+    def set_done(self, project_id):
+        self.env.cr.execute('update project_task_work set  ex_state=state where project_id =%s', (project_id,))
+        self.env.cr.execute('update project_task set  state=%s where project_id =%s', ('close', project_id))
+        self.env.cr.execute('update project_task_work set  state=%s where project_id =%s', ('valid', project_id))
+        self.env.cr.execute('update project_project set  state=%s where id =%s', ('close', project_id))
 
     def set_open(self):
 
@@ -608,20 +509,6 @@ class ProjectCustom(models.Model):
         self.env.cr.execute('update project_task_work set  state=%s where project_id =%s', ('tovalid', self.ids[0]))
         return True
 
-    def get_nature_tache(self, service):
-
-        if 'correction' in service.name:
-            nature_tache = 'correction'
-        elif u'Contrôle' in service.name:
-            nature_tache = 'Controle'
-        else:
-            nature_tache = 'prod'
-
-        return nature_tache
-
-    def get_position(self, increment):
-        return increment + 1
-
     def set_validate(self):
 
         self.set_compute2()
@@ -647,7 +534,7 @@ class ProjectCustom(models.Model):
                             'name': str(str(project.date.year) + ' - ' + str(str(res1).zfill(3)))})
 
             for task in project.task_ids:
-                increment = 0
+
                 if project.date_s:
                     if not task.date_start:
                         task.date_start = project.date_s
@@ -656,9 +543,9 @@ class ProjectCustom(models.Model):
                     if not task.date_end:
                         task.date_end = project.date_e
 
-                # if not task.date_start or not task.date_end:
-                #     raise UserError(_('Erreur ! Vous devez avoir une date de début et une date de fin pour chaque '
-                #                       'tâche ! - %s !') % (task.name))
+                if not task.date_start or not task.date_end:
+                    raise UserError(_('Erreur ! Vous devez avoir une date de début et une date de fin pour chaque '
+                                      'tâche ! - %s !') % (task.name))
 
                 tt = task_obj_line.search([('project_id', '=', project.id), ('task_id', '=', task.id)], order='id')
                 if not tt:
@@ -668,19 +555,15 @@ class ProjectCustom(models.Model):
                                                         'city': project.city})
                     if task.kit_id:
                         for hh in task.kit_id.type_ids.ids:
-                            service = self.env['product.product'].browse(hh)
-                            if service.is_load is True:
-                                nature_tache = self.get_nature_tache(service)
-                                if nature_tache == 'prod':
-                                    increment = self.get_position(increment)
+                            pr = self.env['product.product'].browse(hh)
+                            if pr.is_load is True:
                                 self.env['project.task.work'].create({
-                                    'step_id': task.step_id.id,
                                     'task_id': task.id,
                                     'categ_id': task.categ_id.id,
-                                    'product_id': service.id,
+                                    'product_id': pr.id,
                                     'name': task.kit_id.name,
-                                    'date_start': task.date_start or False,
-                                    'date_end': task.date_end or False,
+                                    'date_start': task.date_start,
+                                    'date_end': task.date_end,
                                     'poteau_t': task.qte,
                                     'poteau_i': task.qte,
                                     'color': task.color,
@@ -700,8 +583,8 @@ class ProjectCustom(models.Model):
                                     'coordin_id2': task.coordin_id2.id or False,
                                     'coordin_id3': task.coordin_id3.id or False,
                                     'coordin_id4': task.coordin_id4.id or False,
-                                    'uom_id': service.uom_id.id,
-                                    'uom_id_r': service.uom_id.id,
+                                    'uom_id': pr.uom_id.id,
+                                    'uom_id_r': pr.uom_id.id,
                                     'ftp': task.ftp,
                                     'kit_id': task.kit_id.id,
                                     'state': 'draft',
@@ -711,8 +594,6 @@ class ProjectCustom(models.Model):
                                     'gest_id3': task.coordin_id.id or False,
                                     'current_gest': task.coordin_id.id or False,
                                     'current_sup': task.reviewer_id.id or False,
-                                    'pos': increment,
-                                    'nature_tache': nature_tache,
 
                                 })
 
@@ -844,12 +725,6 @@ class ProjectCustom(models.Model):
             return {'value': {'city': state.region}}
         return {}
 
-    def button_activate(self):
-        self.state = 'open'
-
-    def button_deactivate(self):
-        self.state = 'draft'
-
 
 class AgreementFeesAmortizationLine(models.Model):
     _name = "agreement.fees.amortization.line"
@@ -872,84 +747,3 @@ class ProjectIssue(models.Model):
     task_id = fields.Char()
     work_id = fields.Char()
     state = fields.Char()
-
-
-class ProductStepInherit(models.Model):
-    _inherit = 'product.step'
-
-    project_ids = fields.Many2many('project.project', string='projets')
-
-    def button_add(self):
-        vv = []
-        for project in self.project_ids:
-            # check State
-            for kit in self.kit_ids:
-                i = 0
-                if project.parent_id1:
-                    exist = self.env['project.task'].search([
-                        ('project_id', '=', project.parent_id1.id),
-                        ('step_id', '=', self.id),
-                        ('kit_id', '=', kit.id)
-                    ]).ids
-                    if exist:
-                        t_id = exist[0]
-                        task = self.env['project.task'].browse(t_id)
-                    else:
-                        task = self.env['project.task'].create({
-                            'project_id': project.parent_id1.id,
-                            'step_id': self.id,
-                            'kit_id': kit.id,
-                            'categ_id': kit.categ_id.id,
-                            'name': self.name,
-                            'date_start': project.date_start,
-                            'date_end': project.date_end,
-                            'state': 'open'
-                        })
-                        t_id = task.id
-                else:
-                    task = self.env['project.task'].create({
-                        'project_id': project.id,
-                        'step_id': self.id,
-                        'kit_id': kit.id,
-                        'categ_id': kit.categ_id.id,
-                        'name': self.name,
-                        'date_start': project.date_start,
-                        'date_end': project.date_end,
-                        'state': 'open'
-                    })
-                    t_id = task.id
-
-                for pr in kit.type_ids:
-                    if pr.is_load is True:
-                        self.env['project.task.work'].create({
-                            'pr_project_id': project.parent_id1.id or False,
-                            'project_id': project.id,
-                            'task_id': t_id,
-                            'step_id': self.id,
-                            'kit_id': kit.id,
-                            'categ_id': task.categ_id.id,
-                            'product_id': pr.id,
-                            'name': kit.name,
-                            'date_start': task.date_start,
-                            'date_end': task.date_end,
-                            'zone': ord(project.zone) if project.zone != '' else 0,
-                            'secteur': ord(project.secteur) if project.zone != '' else 0,
-                            'partner_id': project.partner_id.id,
-                            'state_id': project.state_id.id or False,
-                            'city': project.city,
-                            'gest_id': task.reviewer_id.id or False,
-                            'reviewer_id1': task.reviewer_id1.id or False,
-                            'coordin_id1': task.coordin_id1.id or False,
-                            'coordin_id2': task.coordin_id2.id or False,
-                            'coordin_id3': task.coordin_id3.id or False,
-                            'coordin_id4': task.coordin_id4.id or False,
-                            'uom_id': pr.uom_id.id,
-                            'uom_id_r': pr.uom_id.id,
-                            'state': 'draft',
-                            'display': True,
-                            'active': True,
-                            'pos': i,
-                        })
-                        i += 1
-        self.project_ids = False
-        return True

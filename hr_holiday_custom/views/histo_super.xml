@@ -145,6 +145,6 @@
     </record>
 
     <menuitem id="menu_histo_super" name="Historiques Congés" parent="project_custom.menu_gest_cong"
-              sequence="5" action="action_histo_super"/>
+              sequence="10" action="action_histo_super"/>
 
 </odoo>

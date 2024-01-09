@@ -46,7 +46,6 @@
                         <field string="Tâches" name="task_count" widget="statinfo"
                                style="font-size: 12px; width: 120px;"/>
                     </button>
-                      <field name="web_diagram_id"/>
                     <button class="oe_inline oe_stat_button" name="attachment_tree_view" type="object"
                             icon="fa-files-o" style="border: 1px solid #999999;">
                         <field string="Documents" name="doc_count" widget="statinfo"

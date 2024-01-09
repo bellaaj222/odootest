@@ -11,7 +11,6 @@ import math
 
 class BonShow(models.Model):
     _name = 'bon.show'
-    _rec_name = 'name'
 
     def _amount_all(self):
 
@@ -28,8 +27,17 @@ class BonShow(models.Model):
 
             if rec.type == 'Facture':
                 if rec.employee_id.tva == 'yes':
-                    tvq = tvp_obj.amount
-                    tps = tps_obj.amount
+                    if len(str(rec.employee_id.tps))>0 and not rec.employee_id.tvq:
+                        tps = tps_obj.amount
+                        tvq = 0
+                    elif len(str(rec.employee_id.tvq))>0 and not rec.employee_id.tps:
+                        tvq = tvp_obj.amount
+                        tps = 0
+                    else:
+                        tvq = tvp_obj.amount
+                        tps = tps_obj.amount
+                    
+                    
                 else:
                     tvq = 0
                     tps = 0
@@ -80,8 +88,10 @@ class BonShow(models.Model):
     @api.depends_context('uid')
     def _super_admin(self):
         for record in self:
-            record.sadmin = self.env.user.has_group('project_custom.group_super_admin')
+            record.is_super_admin = self.env.user.has_group('project_custom.group_super_admin')
+            record.is_owner = (self.env['res.users'].browse(self.env.uid).employee_id == record.employee_id)
 
+    is_owner = fields.Boolean(compute='_super_admin', string='Is Owner', default=True)
     categ_id = fields.Many2one('product.category', string='Tags', readonly=True,
                                states={'draft': [('readonly', False)]}, )
     date_from = fields.Date(string='date de', select=True, readonly=True, states={'draft': [('readonly', False)]},
@@ -213,7 +223,7 @@ class BonShow(models.Model):
                           states={'draft': [('readonly', False)]}, )
     done1 = fields.Boolean(compute='_disponible1', string='done', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    sadmin = fields.Boolean(compute='_super_admin', string='done', )
+    is_super_admin = fields.Boolean(compute='_super_admin', string='done', )
     notes = fields.Text(string='year', readonly=True, states={'draft': [('readonly', False)]}, )
     type = fields.Char(string='Type', readonly=True, states={'draft': [('readonly', False)]}, )
     to = fields.Char(string='year', readonly=True, states={'draft': [('readonly', False)]}, )
@@ -264,7 +274,19 @@ class BonShow(models.Model):
                 self.env.cr.execute("DELETE FROM bon_show_line2 WHERE bon_id=%s ", (rec.id,))
 
         return super(BonShow, self).unlink()
-
+    def action_pay(self):
+        return {
+        'name': 'Payement Factures',
+        'type': 'ir.actions.act_window',
+        'view_type': 'form',
+        'view_mode': 'form',
+        'target': 'new',
+        'res_model': 'base.pay.merge.automatic.wizard',
+        'view_id': self.env.ref('eb_pay_wizard.view_pay_merge_form').id,
+        'context': {'active_ids': self.ids,
+                    'active_model': self._name},
+        'domain': []
+    }
     def action_open(self):
 
         return {
@@ -300,7 +322,7 @@ class BonShow(models.Model):
 
                     if list:
                         ligne = academic_obj.browse(list)
-                        if ligne.curr_ids:
+                        if ligne.curr_ids.ids:
                             sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'], reverse=True)
                             for ll in sorted_curr_ids:
                                 if ligne.project_id and ll.project_id.id == ligne.project_id.id:
@@ -347,7 +369,7 @@ class BonShow(models.Model):
                                             line_obj1.browse(kk.id).write({'wage': wage, 'uom_id_r': ll.uom_id2.id,
                                                                            'amount_line': work.poteau_r * wage})
                                             break
-                        if ligne.curr_ids:
+                        if ligne.curr_ids.ids:
                             sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'], reverse=True)
                             for ll in sorted_curr_ids:
                                 if ll.partner_id.id == ligne.partner_id.id:
@@ -390,10 +412,10 @@ class BonShow(models.Model):
                                             line_obj1.browse(kk.id).write({'wage': wage, 'uom_id_r': ll.uom_id2.id,
                                                                            'amount_line': work.poteau_r * wage})
                                             break
-                        if ligne.curr_ids:
+                        if ligne.curr_ids.ids:
                             sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'], reverse=True)
                             for ll in sorted_curr_ids:
-                                print(ll.id)
+                                
 
                                 if ll.product_id and ll.uom_id:
                                     if (ll.product_id.id == work.product_id.id):
@@ -435,125 +457,25 @@ class BonShow(models.Model):
                                                                        'amount_line': work.poteau_r * wage})
                                         break
 
-                if wage == 0:
+            if wage == 0:
 
-                    roles = roles_obj.search([])
-                    for gp in roles:
-                        ro = roles_obj.browse(gp)
-                        if this.employee_id.id in ro.employee_ids.ids:
-                            aca = academic_obj.search([('role_id', '=', ro.id)])
+                roles = roles_obj.search([]).ids
+                for gp in roles:
+                    ro = roles_obj.browse(gp)
+                    if this.employee_id.id in ro.employee_ids.ids:
+                        aca = academic_obj.search([('role_id', '=', ro.id)])
 
-                            if aca:
-                                for list in aca:
+                        if aca:
+                            for list in aca.ids:
 
-                                    if list:
-                                        ligne = academic_obj.browse(list)
+                                if list:
+                                    ligne = academic_obj.browse(list)
 
-                                        if ligne.curr_ids:
-                                            sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
-                                                                     reverse=True)
-                                            for ll in sorted_curr_ids:
-                                                if ligne.project_id and ll.project_id.id == ligne.project_id.id:
-                                                    if ll.product_id and ll.uom_id:
-                                                        if (ll.product_id.id == work.product_id.id):
-                                                            wage = ll.amount
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-                                                        elif ll.product_id and ll.uom_id2:
-                                                            if (ll.product_id.id == work.product_id.id):
-                                                                wage = ll.amount2
-                                                                line_obj1.browse(kk.id).write({'wage': wage,
-                                                                                               'uom_id_r': ll.uom_id2.id,
-                                                                                               'amount_line': work.poteau_r * wage})
-                                                                break
-
-                                                    elif ll.product_id and ll.uom_id2:
-                                                        if (ll.product_id.id == work.product_id.id):
-                                                            wage = ll.amount2
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id2.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-
-                                                    elif ll.categ_id and ll.uom_id:
-                                                        if (ll.categ_id.id == work.categ_id.id):
-                                                            wage = ll.amount
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-                                                        elif ll.categ_id and ll.uom_id2:
-                                                            if (ll.categ_id.id == work.categ_id.id):
-                                                                wage = ll.amount2
-                                                                line_obj1.browse(kk.id).write({'wage': wage,
-                                                                                               'uom_id_r': ll.uom_id2.id,
-                                                                                               'amount_line': work.poteau_r * wage})
-                                                                break
-
-                                                    elif ll.categ_id and ll.uom_id2:
-                                                        if (ll.categ_id.id == work.categ_id.id):
-                                                            wage = ll.amount2
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id2.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-                                        if ligne.curr_ids:
-                                            sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
-                                                                     reverse=True)
-                                            for ll in sorted_curr_ids:
-                                                if ligne.project_id is False and ll.partner_id.id == ligne.partner_id.id:
-                                                    if ll.product_id and ll.uom_id:
-                                                        if (ll.product_id.id == work.product_id.id):
-                                                            wage = ll.amount
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-                                                        elif ll.product_id and ll.uom_id2:
-                                                            if (ll.product_id.id == work.product_id.id):
-                                                                wage = ll.amount2
-                                                                line_obj1.browse(kk.id).write({'wage': wage,
-                                                                                               'uom_id_r': ll.uom_id2.id,
-                                                                                               'amount_line': work.poteau_r * wage})
-                                                                break
-
-                                                    elif ll.product_id and ll.uom_id2:
-                                                        if (ll.product_id.id == work.product_id.id):
-                                                            wage = ll.amount2
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id2.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-
-                                                    elif ll.categ_id and ll.uom_id:
-                                                        if (ll.categ_id.id == work.categ_id.id):
-                                                            wage = ll.amount
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-                                                        elif ll.categ_id and ll.uom_id2:
-                                                            if (ll.categ_id.id == work.categ_id.id):
-                                                                wage = ll.amount2
-                                                                line_obj1.browse(kk.id).write({'wage': wage,
-                                                                                               'uom_id_r': ll.uom_id2.id,
-                                                                                               'amount_line': work.poteau_r * wage})
-                                                                break
-
-                                                    elif ll.categ_id and ll.uom_id2:
-                                                        if (ll.categ_id.id == work.categ_id.id):
-                                                            wage = ll.amount2
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id2.id,
-                                                                 'amount_line': work.poteau_r * wage})
-                                                            break
-                                        if ligne.curr_ids:
-                                            sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
-                                                                     reverse=True)
-                                            for ll in sorted_curr_ids:
-
+                                    if ligne.curr_ids.ids:
+                                        sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
+                                                                 reverse=True)
+                                        for ll in sorted_curr_ids:
+                                            if ligne.project_id and ll.project_id.id == ligne.project_id.id:
                                                 if ll.product_id and ll.uom_id:
                                                     if (ll.product_id.id == work.product_id.id):
                                                         wage = ll.amount
@@ -561,13 +483,12 @@ class BonShow(models.Model):
                                                             {'wage': wage, 'uom_id_r': ll.uom_id.id,
                                                              'amount_line': work.poteau_r * wage})
                                                         break
-
                                                     elif ll.product_id and ll.uom_id2:
                                                         if (ll.product_id.id == work.product_id.id):
                                                             wage = ll.amount2
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id2.id,
-                                                                 'amount_line': work.poteau_r * wage})
+                                                            line_obj1.browse(kk.id).write({'wage': wage,
+                                                                                           'uom_id_r': ll.uom_id2.id,
+                                                                                           'amount_line': work.poteau_r * wage})
                                                             break
 
                                                 elif ll.product_id and ll.uom_id2:
@@ -580,19 +501,17 @@ class BonShow(models.Model):
 
                                                 elif ll.categ_id and ll.uom_id:
                                                     if (ll.categ_id.id == work.categ_id.id):
-
                                                         wage = ll.amount
                                                         line_obj1.browse(kk.id).write(
                                                             {'wage': wage, 'uom_id_r': ll.uom_id.id,
                                                              'amount_line': work.poteau_r * wage})
                                                         break
-
                                                     elif ll.categ_id and ll.uom_id2:
                                                         if (ll.categ_id.id == work.categ_id.id):
                                                             wage = ll.amount2
-                                                            line_obj1.browse(kk.id).write(
-                                                                {'wage': wage, 'uom_id_r': ll.uom_id2.id,
-                                                                 'amount_line': work.poteau_r * wage})
+                                                            line_obj1.browse(kk.id).write({'wage': wage,
+                                                                                           'uom_id_r': ll.uom_id2.id,
+                                                                                           'amount_line': work.poteau_r * wage})
                                                             break
 
                                                 elif ll.categ_id and ll.uom_id2:
@@ -602,13 +521,132 @@ class BonShow(models.Model):
                                                             {'wage': wage, 'uom_id_r': ll.uom_id2.id,
                                                              'amount_line': work.poteau_r * wage})
                                                         break
+                                    if ligne.curr_ids.ids:
+                                        sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
+                                                                 reverse=True)
+                                        for ll in sorted_curr_ids:
+                                            if ligne.project_id is False and ll.partner_id.id == ligne.partner_id.id:
+                                                if ll.product_id and ll.uom_id:
+                                                    if (ll.product_id.id == work.product_id.id):
+                                                        wage = ll.amount
+                                                        line_obj1.browse(kk.id).write(
+                                                            {'wage': wage, 'uom_id_r': ll.uom_id.id,
+                                                             'amount_line': work.poteau_r * wage})
+                                                        break
+                                                    elif ll.product_id and ll.uom_id2:
+                                                        if (ll.product_id.id == work.product_id.id):
+                                                            wage = ll.amount2
+                                                            line_obj1.browse(kk.id).write({'wage': wage,
+                                                                                           'uom_id_r': ll.uom_id2.id,
+                                                                                           'amount_line': work.poteau_r * wage})
+                                                            break
+
+                                                elif ll.product_id and ll.uom_id2:
+                                                    if (ll.product_id.id == work.product_id.id):
+                                                        wage = ll.amount2
+                                                        line_obj1.browse(kk.id).write(
+                                                            {'wage': wage, 'uom_id_r': ll.uom_id2.id,
+                                                             'amount_line': work.poteau_r * wage})
+                                                        break
+
+                                                elif ll.categ_id and ll.uom_id:
+                                                    if (ll.categ_id.id == work.categ_id.id):
+                                                        wage = ll.amount
+                                                        line_obj1.browse(kk.id).write(
+                                                            {'wage': wage, 'uom_id_r': ll.uom_id.id,
+                                                             'amount_line': work.poteau_r * wage})
+                                                        break
+                                                    elif ll.categ_id and ll.uom_id2:
+                                                        if (ll.categ_id.id == work.categ_id.id):
+                                                            wage = ll.amount2
+                                                            line_obj1.browse(kk.id).write({'wage': wage,
+                                                                                           'uom_id_r': ll.uom_id2.id,
+                                                                                           'amount_line': work.poteau_r * wage})
+                                                            break
+
+                                                elif ll.categ_id and ll.uom_id2:
+                                                    if (ll.categ_id.id == work.categ_id.id):
+                                                        wage = ll.amount2
+                                                        line_obj1.browse(kk.id).write(
+                                                            {'wage': wage, 'uom_id_r': ll.uom_id2.id,
+                                                             'amount_line': work.poteau_r * wage})
+                                                        break
+                                    if ligne.curr_ids.ids:
+                                        sorted_curr_ids = sorted(ligne.curr_ids, key=lambda x: x['product_id'],
+                                                                 reverse=True)
+                                        for ll in sorted_curr_ids:
+
+                                            if ll.product_id and ll.uom_id:
+                                                if (ll.product_id.id == work.product_id.id):
+                                                    wage = ll.amount
+                                                    line_obj1.browse(kk.id).write(
+                                                        {'wage': wage, 'uom_id_r': ll.uom_id.id,
+                                                         'amount_line': work.poteau_r * wage})
+                                                    break
+
+                                                elif ll.product_id and ll.uom_id2:
+                                                    if (ll.product_id.id == work.product_id.id):
+                                                        wage = ll.amount2
+                                                        line_obj1.browse(kk.id).write(
+                                                            {'wage': wage, 'uom_id_r': ll.uom_id2.id,
+                                                             'amount_line': work.poteau_r * wage})
+                                                        break
+
+                                            elif ll.product_id and ll.uom_id2:
+                                                if (ll.product_id.id == work.product_id.id):
+                                                    wage = ll.amount2
+                                                    line_obj1.browse(kk.id).write(
+                                                        {'wage': wage, 'uom_id_r': ll.uom_id2.id,
+                                                         'amount_line': work.poteau_r * wage})
+                                                    break
+
+                                            elif ll.categ_id and ll.uom_id:
+                                                if (ll.categ_id.id == work.categ_id.id):
+
+                                                    wage = ll.amount
+                                                    line_obj1.browse(kk.id).write(
+                                                        {'wage': wage, 'uom_id_r': ll.uom_id.id,
+                                                         'amount_line': work.poteau_r * wage})
+                                                    break
+
+                                                elif ll.categ_id and ll.uom_id2:
+                                                    if (ll.categ_id.id == work.categ_id.id):
+                                                        wage = ll.amount2
+                                                        line_obj1.browse(kk.id).write(
+                                                            {'wage': wage, 'uom_id_r': ll.uom_id2.id,
+                                                             'amount_line': work.poteau_r * wage})
+                                                        break
+
+                                            elif ll.categ_id and ll.uom_id2:
+                                                if (ll.categ_id.id == work.categ_id.id):
+                                                    wage = ll.amount2
+                                                    line_obj1.browse(kk.id).write(
+                                                        {'wage': wage, 'uom_id_r': ll.uom_id2.id,
+                                                         'amount_line': work.poteau_r * wage})
+                                                    break
 
             if work.uom_id_r.id == 5:
                 line_obj1.browse(kk.id).write({'amount_line': work.hours_r * wage})
 
         return True
 
+    def name_get(self):
+        res = []
+        for rec in self:
+            if rec.type == 'Feuille de Temps':
+                name = rec.employee_id.name + ' - ' + str(rec.date_from.day) + '/' + (
+                    str(rec.date_from.month)) + ' - ' + str(rec.date_to.day) + '/' + str(rec.date_to.month)
+            else:
+                name = rec.name
+            res.append((rec.id, name))
+        return res
+
     def button_approve(self):
+
+        lines = self.env['bon.show.line2'].search([('bon_id', '=', self.id)])
+        for line in lines:
+            if line.state_bon == 'pending':
+                raise UserError(_('Action Impossible ! Veuillez filtrer vos Bons.'))
 
         line_obj1 = self.env['bon.show.line2']
         emp_obj = self.env['hr.employee']
@@ -652,7 +690,9 @@ class BonShow(models.Model):
                         mm = mm + emp.work_email + ','
                     self.write({'cci': mm})
 
-            # self.env['email.template'].send_mail(29, force_send=True)
+          ##  self.env['email.template'].send_mail(29, force_send=True)
+            
+            self.env['mail.template'].sudo().browse(29).send_mail(self.id, force_send=True)
 
         self.write({'state': 'waiting'})
         if this.type == 'Facture':
@@ -744,8 +784,8 @@ class BonShow(models.Model):
                                   'categ_id': this_line.product_id.categ_id.id,
                                   'project_id': this_line.project_id.id or False,
                                   'partner_id': this_line.partner_id.id or False,
-                                  'zo': str(this_line.zone),
-                                  'sect': str(this_line.secteur),
+                                  'zone':this_line.zone,
+                                  'secteur': this_line.secteur,
                                   'date_start_r': this_line.date_start_r,
                                   'hours_r': this_line.hours_r,
                                   'note': this_line.note,
@@ -766,8 +806,10 @@ class BonShow(models.Model):
                 if tt:
                     self.env.cr.execute('update base_group_merge_automatic_wizard set  state=%s where id=%s', (
                         'invoiced', task_obj_line.browse(this_line.line_id.id).group_id2.id), )
-        # if empl.job_id.id == 1:
-        #     self.env['email.template'].send_mail(32, force_send=True)
+        if empl.job_id.id == 1:
+          ##  self.env['email.template'].send_mail(32, force_send=True)
+           ## raise UserError(_("Action Impossible!\nAction possible qu'en statut brouillon!"))
+            self.env['mail.template'].sudo().browse(32).send_mail(self.id, force_send=True)
 
         self.write({'state': 'close'})  # , 'pay_id': pay_id
 
@@ -827,57 +869,82 @@ class BonShow(models.Model):
         current = self[0]
 
         self.env.cr.execute(
-            'select id from project_task_work_line where employee_id= %s and date>=%s and date <=%s and done3 is True and done1 is False',
+            'select id from project_task_work_line where employee_id= %s and date>=%s and date <=%s and done1 is not True',
             (current.employee_id.id, current.date_from, current.date_to))
-        project_id = self.env.cr.fetchall()
-
+        bon_ids = self.env.cr.fetchall()
+        
         if current.state != 'draft':
             raise UserError(_("Action Impossible!\nAction possible qu'en statut brouillon!"))
-        if project_id:
-            for tt in project_id:
-                s2 = self.env['project.task.work.line'].browse(tt)
-                s3 = self.env['bon.show.line2'].search([('line_id', '=', s2.id)])
-                if not s3:
-                    if current.employee_id.job_id.name in u'Employé':
-                        uom = 5
-                        self.write({'type': 'Feuille de Temps'})
-                    else:
-                        uom = s2.product_id.uom_id.id
-                        self.write({'type': 'Facture'})
-                    self.env['bon.show.line2'].create({
-                        'task_id': s2.task_id.id,
-                        'categ_id': s2.work_id.categ_id.id,
-                        'product_id': s2.product_id.id,
-                        'name': s2.name,
-                        'date_start': s2.date_start,
-                        'date_end': s2.date_end,
-                        'date_start_r': s2.date_start_r,
-                        'date_end_r': s2.date_end_r,
-                        'poteau_t': s2.poteau_t,
-                        'poteau_r': s2.poteau_r,
-                        'color': s2.color,
-                        'color1': s2.color1,
-                        'hours_r': s2.hours_r,
-                        'total_t': s2.total_t,
-                        'project_id': s2.work_id.project_id.id,
-                        'partner_id': s2.work_id.project_id.partner_id.id,
-                        'bon_id': current.id,
-                        'gest_id': s2.gest_id.id or False,
-                        'employee_id': s2.employee_id.id or False,
-                        'uom_id': uom or s2.uom_id.id,
-                        'uom_id_r': uom or s2.uom_id.id,
-                        'ftp': s2.ftp,
-                        'state': s2.state,
-                        'work_id': s2.work_id.id,
-                        'line_id': s2.id,
-                        'zone': s2.zone,
-                        'done': True,
-                        'send': True,
-                        'secteur': s2.secteur,
+        if bon_ids:
+            for bon_id in bon_ids:
+                bon = self.env['project.task.work.line'].browse(bon_id)
+                
+                exist_in_wizard = self.env['bon.show.line2'].search(
+                    [('line_id', '=', bon.id), ('bon_id', '=', current.id)])
+                exist_out_wizard = self.env['bon.show.line2'].search(
+                    [('line_id', '=', bon.id), ('bon_id', '!=', current.id)])
+                if exist_in_wizard:
+                    exist_in_wizard.unlink()
 
-                    })
+                if current.employee_id.job_id.name in u'Employé':
+                    uom = 5
+                    self.write({'type': 'Feuille de Temps'})
+                else:
+                    uom = bon.product_id.uom_id.id
+                    self.write({'type': 'Facture'})
+
+                state_bon = ''
+                if bon.group_id2.state=='valid' or bon.group_id2.state1=='valid' or bon.group_id2.state2=='valid':
+                    state_bon = 'valid'
+                elif bon.product_id.id==156 or bon.product_id.id==80 or bon.product_id.id==197 or bon.product_id.id==218 or bon.product_id.id==132 or bon.product_id.id==174:
+                    state_bon = 'valid'
+                else:
+                    state_bon = 'pending'
+##                raise UserError(
+##                    _('Action Impossible!\nUne Facture avec le même numéro existe déjà! Facture N°:%s') % exist_out_wizard)
+                if not exist_out_wizard:
+                    if bon.group_id2.state!='draft' or bon.group_id2.state1!='draft' or bon.group_id2.state2!='draft':
+                        self.env['bon.show.line2'].create({
+                            'task_id': bon.task_id.id,
+                            'categ_id': bon.work_id.categ_id.id,
+                            'product_id': bon.product_id.id,
+                            'name': bon.name,
+                            'date_start': bon.date_start,
+                            'date_end': bon.date_end,
+                            'date_start_r': bon.date_start_r,
+                            'date_end_r': bon.date_end_r,
+                            'poteau_t': bon.poteau_t,
+                            'poteau_r': bon.poteau_r,
+                            'color': bon.color,
+                            'color1': bon.color1,
+                            'hours_r': bon.hours_r,
+                            'total_t': bon.total_t,
+                            'project_id': bon.work_id.project_id.id,
+                            'partner_id': bon.work_id.project_id.partner_id.id,
+                            'bon_id': current.id,
+                            'gest_id': bon.gest_id.id or False,
+                            'employee_id': bon.employee_id.id or False,
+                            'uom_id': uom or bon.uom_id.id,
+                            'uom_id_r': uom or bon.uom_id.id,
+                            'ftp': bon.ftp,
+                            'state': bon.state,
+                            'work_id': bon.work_id.id,
+                            'line_id': bon.id,
+                            'zone': bon.zone,
+                            'done': True,
+                            'send': True,
+                            'secteur': bon.secteur,
+                            'state_bon': state_bon,
+                        })
 
         return True
+
+    def filter_(self):
+
+        all_lines = self.env['bon.show.line2'].search([('bon_id', '=', self.id)])
+        for line in all_lines:
+            if line.state_bon == 'pending':
+                line.unlink()
 
     def button_load_mail(self):
 
@@ -1045,6 +1112,9 @@ class BonShowLine2(models.Model):
     line_id = fields.Many2one('project.task.work.line', string='Tags')
     categ_id = fields.Many2one('product.category', string='Tags')
     done = fields.Boolean(compute='_disponible', string='done', default=1)
+    state_bon = fields.Selection([('pending', 'En attende de validation'),
+                                  ('valid', 'Validé')],
+                                 string='Etat', copy=False, default='valid')
 
     @api.onchange('employee_id', 'bon_id.type')
     def onchange_employee_id(self):
@@ -1057,15 +1127,18 @@ class BonShowLine2(models.Model):
                 r.append(c)
                 print(r)
                 if r:
+                    
                     for nn in r:
+                        
                         if self.bon_id.type == 'Feuille de Temps':
-                            dep = self.env['product.product'].search([('categ_id', '=', nn), ('is_ft', '=', True)])
+                            if nn:
+                                dep = self.env['product.product'].search([('categ_id', '=', nn), ('is_ft', '=', True)])
                         else:
-
-                            dep = self.env['product.product'].search([('categ_id', '=', nn), ('is_invoice', '=', True)])
+                            if nn:
+                                dep = self.env['product.product'].search([('categ_id', '=', nn), ('is_invoice', '=', True)])
 
                         if dep:
-                            for jj in dep:
+                            for jj in dep.ids:
                                 r.append(jj)
             res['domain'] = {'product_id': [('id', 'in', r)]}
         return res
@@ -1110,6 +1183,55 @@ class BonShowLine2(models.Model):
             result['value']['amount_line'] = 0
 
         return result
+
+    def open_declaration_bon(self):
+
+        wizard_id = self.env['project.task.work.line'].browse(self.line_id.id).wizard_id.id
+        affect_type = self.env['base.invoices.merge.automatic.wizard'].browse(wizard_id).types_affect
+
+        if self.line_id.group_id2.state!= 'draft':
+            return {
+                'name': 'Déclaration des Bons',
+                'type': 'ir.actions.act_window',
+                'view_type': 'form',
+                'view_mode': 'form',
+                'view_id': self.env.ref('eb_group_wizard.declaration_bons_form').id,
+                'target': 'new',
+                'res_model': 'base.group.merge.automatic.wizard',
+                'res_id': self.line_id.group_id2.id,
+                'context': {},
+                'domain': [],
+            }
+
+        elif self.line_id.group_id2.state1!= 'draft':
+            return {
+                'name': 'Déclaration des Bons',
+                'type': 'ir.actions.act_window',
+                'view_type': 'form',
+                'view_mode': 'form',
+                'view_id': self.env.ref('eb_group_wizard.declaration_de_bon_control_form').id,
+                'target': 'new',
+                'res_model': 'base.group.merge.automatic.wizard',
+                'res_id': self.line_id.group_id2.id,
+                'context': {},
+                'domain': [],
+            }
+
+            
+        else:
+            return {
+                'name': 'Déclaration des Bons',
+                'type': 'ir.actions.act_window',
+                'view_type': 'form',
+                'view_mode': 'form',
+                'view_id': self.env.ref('eb_group_wizard.declaration_de_bon_correction_form').id,
+                'target': 'new',
+                'res_model': 'base.group.merge.automatic.wizard',
+                'res_id': self.line_id.group_id2.id,
+                'context': {},
+                'domain': [],
+            } 
+        
 
 
 class BonShowLine1(models.Model):

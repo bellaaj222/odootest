@@ -5,7 +5,7 @@
         <field name="model">project.task.work.line</field>
         <field name="arch" type="xml">
             <tree decoration-info="state == 'affect'" decoration-danger="state == 'cancel'"
-                  decoration-primary="state == 'valid'">
+                  decoration-primary="state == 'valid'" create="0">
                 <field name="work_id" invisible="1"/>
                 <field name="date" invisible="0" string="Date"/>
                 <field name="project_id" string="Projet"/>

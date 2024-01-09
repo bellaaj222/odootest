@@ -6,11 +6,10 @@
         <field name="name">Mes Tâches Encours</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">project.task.work</field>
-        <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('pos', '=', 1)]</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
         <field name="context">{}</field>
         <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'kanban', 'view_id': ref('task_work.view_task_work_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_task_work_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('task_work.view_task_work_form')})]"/>
     </record>
@@ -21,11 +20,10 @@
         <field name="name">Tâches à Planifier</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">project.task.work</field>
-        <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('pos', '=', 1)]</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
         <field name="context">{}</field>
         <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'kanban', 'view_id': ref('task_work.view_task_work_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_task_work_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('task_work.view_task_work_form')})]"/>
     </record>
@@ -36,11 +34,10 @@
         <field name="name">Tâches de mes Collaborateurs</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">project.task.work</field>
-        <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('pos', '=', 1)]</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
         <field name="context">{}</field>
         <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'kanban', 'view_id': ref('task_work.view_task_work_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_task_work_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('task_work.view_task_work_form')})]"/>
     </record>
@@ -51,11 +48,10 @@
         <field name="name">Tâches à Traiter</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">project.task.work</field>
-        <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('pos', '=', 1)]</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
         <field name="context">{}</field>
         <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'kanban', 'view_id': ref('task_work.view_task_work_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_task_work_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('task_work.view_task_work_form')})]"/>
     </record>
@@ -66,11 +62,10 @@
         <field name="name">Tâches Prévisionnelles</field>
         <field name="type">ir.actions.act_window</field>
         <field name="res_model">project.task.work</field>
-        <field name="view_mode">kanban,tree,form</field>
-        <field name="domain">[('pos', '=', 1)]</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
         <field name="context">{}</field>
         <field name="view_ids" eval="[(5, 0, 0),
-                (0, 0, {'view_mode': 'kanban', 'view_id': ref('task_work.view_task_work_kanban')}),
                 (0, 0, {'view_mode': 'tree', 'view_id': ref('task_work.view_task_work_tree')}),
                 (0, 0, {'view_mode': 'form', 'view_id': ref('task_work.view_task_work_form')})]"/>
     </record>

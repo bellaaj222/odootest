@@ -36,9 +36,9 @@ class EbMergePermis(models.Model):
                 raise UserError(_('Action Impossible!\nSeules les demandes de permis sont à sélectionner!'))
             for jj in active_ids:
                 work = self.env['project.task.work'].browse(jj)
-                self._cr.execute('update project_task_work set  state=%s where id=%s ', ('affect', work.id))
+                self.env.cr.execute('update project_task_work set  state=%s where id=%s ', ('affect', work.id))
                 if not work.employee_id:
-                    self._cr.execute('update project_task_work set  employee_id=%s where id=%s ', (30, work.id))
+                    self.env.cr.execute('update project_task_work set  employee_id=%s where id=%s ', (30, work.id))
                 if work.kit_id:
                     res.update({'project_id': work.project_id.id, 'zone': work.zone, 'secteur': work.secteur,
                                 'employee_id': work.employee_id.id or 30})
@@ -269,44 +269,132 @@ class EbMergePermis(models.Model):
                         'coordin_id4': tt.coordin_id4.id or False,
                     })
                 else:
-                    for hh in tt.kit_id.type_ids.ids:
-                        pr = self.env['product.product'].browse(hh)
-                        self.env['project.task.work'].create({
-                            'task_id': tt.id,
-                            'product_id': pr.id,
-                            'kit_id': tt.kit_id.id,
-                            'name': tt.name,
-                            'date_start': tt.date_start,
-                            'date_end': tt.date_end,
-                            'poteau_t': tt.qte,
-                            'color': tt.color,
-                            'total_t': tt.color * 7,  ##*work.employee_id.contract_id.wage
-                            'project_id': tt.project_id.id,
-                            'partner_id': tt.project_id.partner_id.id,
-                            'gest_id': tt.reviewer_id.id or False,
-                            'employee_id': current.employee_id.id or False,
-                            'current_emp': current.employee_id.id or False,
-                            'uom_id': tt.uom_id.id,
-                            'uom_id_r': tt.uom_id.id,
-                            'ftp': tt.ftp,
-                            'etape': tt.etape,
-                            'zone': current.zone,
-                            'secteur': current.secteur,
-                            'zo': 'Zone ' + str(current.zone).zfill(1),
-                            'sect': 'Secteur ' + str(current.secteur).zfill(2),
-                            'categ_id': 6,
-                            'state': 'affect',
-                            'priority': tt.priority,
-                            'sequence': sequence,
-                            'active': True,
-                            'display': True,
-                            'gest_id3': tt.coordin_id.id,
-                            'reviewer_id1': tt.reviewer_id1.id or False,
-                            'coordin_id1': tt.coordin_id1.id or False,
-                            'coordin_id2': tt.coordin_id2.id or False,
-                            'coordin_id3': tt.coordin_id3.id or False,
-                            'coordin_id4': tt.coordin_id4.id or False,
-                        })
+                    increment = 1
+                    while increment <= tt.qte_permis:
+                        print(increment)
+                        for hh in tt.kit_id.type_ids.ids:
+                            pr = self.env['product.product'].browse(hh)
+                            sql_query = """
+                                INSERT INTO project_task_work (
+                                    task_id,
+                                    product_id,
+                                    kit_id,
+                                    name,
+                                    date_start,
+                                    date_end,
+                                    poteau_t,
+                                    color,
+                                    total_t,
+                                    project_id,
+                                    partner_id,
+                                    gest_id,
+                                    employee_id,
+                                    current_emp,
+                                    uom_id,
+                                    uom_id_r,
+                                    ftp,
+                                    etape,
+                                    zone,
+                                    secteur,
+                                    zo,
+                                    sect,
+                                    categ_id,
+                                    state,
+                                    priority,
+                                    task_priority,
+                                    task_type,
+                                    sequence,
+                                    active,
+                                    display,
+                                    gest_id3,
+                                    reviewer_id1,
+                                    coordin_id1,
+                                    coordin_id2,
+                                    coordin_id3,
+                                    coordin_id4
+                                )
+                                VALUES (
+                                    %(task_id)s,
+                                    %(product_id)s,
+                                    %(kit_id)s,
+                                    %(name)s,
+                                    %(date_start)s,
+                                    %(date_end)s,
+                                    %(poteau_t)s,
+                                    %(color)s,
+                                    %(total_t)s,
+                                    %(project_id)s,
+                                    %(partner_id)s,
+                                    %(gest_id)s,
+                                    %(employee_id)s,
+                                    %(current_emp)s,
+                                    %(uom_id)s,
+                                    %(uom_id_r)s,
+                                    %(ftp)s,
+                                    %(etape)s,
+                                    %(zone)s,
+                                    %(secteur)s,
+                                    %(zo)s,
+                                    %(sect)s,
+                                    %(categ_id)s,
+                                    %(state)s,
+                                    %(priority)s,
+                                    %(task_priority)s,
+                                    %(task_type)s,
+                                    %(sequence)s,
+                                    %(active)s,
+                                    %(display)s,
+                                    %(gest_id3)s,
+                                    %(reviewer_id1)s,
+                                    %(coordin_id1)s,
+                                    %(coordin_id2)s,
+                                    %(coordin_id3)s,
+                                    %(coordin_id4)s
+                                );
+                            """
+
+                            params = {
+                                'task_id': tt.id,
+                                'product_id': pr.id,
+                                'kit_id': tt.kit_id.id,
+                                'name': tt.name,
+                                'date_start': tt.date_start,
+                                'date_end': tt.date_end,
+                                'poteau_t': tt.qte,
+                                'color': tt.color,
+                                'total_t': tt.color * 7,
+                                'project_id': tt.project_id.id,
+                                'partner_id': tt.project_id.partner_id.id,
+                                'gest_id': tt.reviewer_id.id if tt.reviewer_id else None,
+                                'employee_id': current.employee_id.id if current.employee_id else None,
+                                'current_emp': current.employee_id.id if current.employee_id else None,
+                                'uom_id': tt.uom_id.id if tt.uom_id else None,
+                                'uom_id_r': tt.uom_id.id if tt.uom_id else None,
+                                'ftp': tt.ftp,
+                                'etape': tt.etape,
+                                'zone': current.zone,
+                                'secteur': current.secteur,
+                                'zo': 'Zone ' + str(current.zone).zfill(1) if current.zone else None,
+                                'sect': 'Secteur ' + str(current.secteur).zfill(2) if current.secteur else None,
+                                'categ_id': 6,
+                                'state': 'affect',
+                                'priority': tt.priority if tt.priority else None,
+                                'task_priority': 'normal',
+                                'task_type': 'task',
+                                'sequence': sequence,
+                                'active': True,
+                                'display': True,
+                                'gest_id3': tt.coordin_id.id if tt.coordin_id else None,
+                                'reviewer_id1': tt.reviewer_id1.id if tt.reviewer_id1 else None,
+                                'coordin_id1': tt.coordin_id1.id if tt.coordin_id1 else None,
+                                'coordin_id2': tt.coordin_id2.id if tt.coordin_id2 else None,
+                                'coordin_id3': tt.coordin_id3.id if tt.coordin_id3 else None,
+                                'coordin_id4': tt.coordin_id4.id if tt.coordin_id4 else None,
+                            }
+
+                            self.env.cr.execute(sql_query, params)
+                        increment += 1
+                tt.qte_permis = 1
 
         view = self.env['sh.message.wizard']
 

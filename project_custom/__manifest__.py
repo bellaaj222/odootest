@@ -19,8 +19,7 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'project', 'task_custom', 'employee_custom', 'partner_custom',
-                'company_custom', 'country_custom', 'account'],
+    'depends': ['base', 'project', 'task_custom', 'task_work', 'employee_custom', 'product_custom', 'partner_custom', 'company_custom', 'country_custom', 'account'],
 
     # always loaded
     'data': [
@@ -28,25 +27,16 @@
         'security/security.xml',
         'data/account_tax.xml',
         'views/project.xml',
-        'views/planning.xml',
-        'views/template.xml',
-        'views/template_gest.xml',
         'views/not_kit.xml',
         'views/type.xml',
         'views/dash.xml',
         'views/menu.xml',
-        'views/inherit.xml',
     ],
-    'assets': {
-        'web.assets_backend': [
-            'project_custom/static/src/css/kanban_custom.css',
-        ],
-    },
     # only loaded in demonstration mode
     'demo': [
         'demo/demo.xml',
     ],
 
-    'application': True,
+    'application' : True,
     'sequence': -1000,
 }

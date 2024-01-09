@@ -12,9 +12,10 @@ class MergeTasksLine(models.Model):
 
     min_id = fields.Integer(string='MinID', order='min_id asc')
     aggr_ids = fields.Char('Ids')
-    zone = fields.Char(string="Zone")
-    secteur = fields.Char(string="Secteur")
-    secteur_to = fields.Char(string="Secteur")
+    zone = fields.Integer(string="Zone")
+    zo = fields.Char(string="Zone")
+    secteur = fields.Integer(string="Secteur")
+    secteur_to = fields.Integer(string="Secteur")
     date_from = fields.Date(string='Wizard')
     date_to = fields.Date(string='Wizard')
     poteau_t = fields.Float('Time Spent')
@@ -159,16 +160,15 @@ class EbMergeTasks(models.Model):
                         v.append(this_p.kit_id.id)
                     else:
                         f.append(this_p.name)
-
                 if len(v) > 0:
                     self.env.cr.execute(
-                        'SELECT id FROM project_task_work WHERE project_id= %s AND state IN %s AND kit_id IN %s AND active=TRUE AND is_copy=FALSE',
-                        (current.project_id.id, ('draft', 'affect'), tuple(v)))
+                        'SELECT id FROM project_task_work WHERE project_id= %s AND kit_id IN %s AND active=TRUE AND is_copy=FALSE',
+                        (current.project_id.id, tuple(v)))
                     ll = self.env.cr.fetchall()
                 else:
                     self.env.cr.execute(
-                        'select id from project_task_work where project_id= %s and state in %s and etape in %s',
-                        (current.project_id.id, ('draft', 'affect'), tuple(f)))
+                        'select id from project_task_work where project_id= %s and etape in %s',
+                        (current.project_id.id, tuple(f)))
 
                     ll = self.env.cr.fetchall()
 
@@ -225,7 +225,6 @@ class EbMergeTasks(models.Model):
                     pp = set(ll).intersection(res_cpt)
                 else:
                     res_cpt = ll
-
             for kk in res_cpt:
                 if kk:
                     s2 = self.env['project.task.work'].browse(kk)
@@ -235,158 +234,372 @@ class EbMergeTasks(models.Model):
                             'select sequence from project_task_work where task_id=%s and sequence is not Null order by sequence desc limit 1',
                             (s2.task_id.id,))
                         res = self.env.cr.fetchone()
-
-                    # Checks (alphanumeric, single character, secteur_to > secteur, zone unique)
-                    zones = []
                     for jj in current.line_ids:
-                        if not (jj.zone.isalnum() and jj.secteur.isalnum() and jj.secteur_to.isalnum()):
-                            raise UserError(_('Les Zones et Les Secteurs doivent être Alphanumériques'))
-                        if len(jj.zone + jj.secteur + jj.secteur_to) != 3:
-                            raise UserError(_('Les Zones et Les Secteurs doivent être des Caractères'))
-                        if (jj.secteur.isnumeric() and jj.secteur_to.isalpha()) or (
-                                jj.secteur.isalpha() and jj.secteur_to.isnumeric()):
-                            raise UserError(_("Les Secteurs de la même Zone doivent être soient numériques soit "
-                                              "alphabétiques"))
-                        if jj.secteur.upper() > jj.secteur_to.upper():
-                            raise UserError(_("Le 'Secteur A' doit précéder le 'Secteur De'"))
-                        if jj.zone.upper() in zones:
-                            raise UserError(_('Les Zones doivent être Distinctes'))
-                        zones.append(jj.zone.upper())
-
+                        if jj.secteur > jj.secteur_to:
+                            raise UserError(
+                                _("Action impossible!\n Le secteur de départ doit etre plus petit que le secteur de fin!"))
                     for jj in current.line_ids:
 
-                        for hh in range(ord(jj.secteur.upper()), ord(jj.secteur_to.upper()) + 1):
-                            if jj.employee_id:
-                                employee = jj.employee_id.id
-                            else:
-                                employee = s2.employee_id.id or False
-                            if jj.date_from:
-                                date_from = jj.date_from
-                            else:
-                                date_from = s2.date_start
-                            if jj.date_to:
-                                date_to = jj.date_to
-                            else:
-                                date_to = s2.date_end
-                            if jj.poteau_t:
-                                poteau_t = jj.poteau_t
-                            else:
-                                poteau_t = s2.poteau_t
-                            if jj.is_display is True:
-                                is_display = True
-                            else:
-                                is_display = False
-                            if jj.zone == '0':
-                                task_name = s2.name + ' - Secteur ' + chr(hh).upper()
-                            else:
-                                task_name = s2.name + ' - Zone ' + jj.zone.upper() + ' Secteur ' + chr(hh).upper()
+                        if jj.zone == 0 and jj.secteur > 0:
+                            for hh in range(jj.secteur, jj.secteur_to + 1):
+                                if jj.employee_id:
+                                    employee = jj.employee_id.id
+                                else:
+                                    employee = s2.employee_id.id or False
+                                if jj.date_from:
+                                    date_from = jj.date_from
+                                else:
+                                    date_from = s2.date_start
+                                if jj.date_to:
+                                    date_to = jj.date_to
+                                else:
+                                    date_to = s2.date_end
+                                if jj.poteau_t:
+                                    poteau_t = jj.poteau_t
+                                else:
+                                    poteau_t = s2.poteau_t
+                                if jj.is_display is True:
+                                    is_display = True
+                                else:
+                                    is_display = False
 
-                            # Construct the INSERT query
-                            sql_query = """
+                                # Construct the INSERT query
+                                sql_query = """
+                                
+                                    INSERT INTO base_group_merge_line2 (
+                                    
+                                        task_id,
+                                        categ_id,
+                                        product_id,
+                                        name,
+                                        date_start,
+                                        date_end,
+                                        poteau_i,
+                                        poteau_t,
+                                        color,
+                                        total_t,
+                                        project_id,
+                                        etape,
+                                        gest_id,
+                                        employee_id,
+                                        uom_id,
+                                        uom_id_r,
+                                        ftp,
+                                        state,
+                                        work_id,
+                                        sequence,
+                                        zone,
+                                        zo,
+                                        secteur,
+                                        wiz_id,
+                                        is_display
+                                    )
+                                    
+                                    VALUES (
+                                        %(task_id)s,
+                                        %(categ_id)s,
+                                        %(product_id)s,
+                                        %(name)s,
+                                        %(date_start)s,
+                                        %(date_end)s,
+                                        %(poteau_i)s,
+                                        %(poteau_t)s,
+                                        %(color)s,
+                                        %(total_t)s,
+                                        %(project_id)s,
+                                        %(etape)s,
+                                        %(gest_id)s,
+                                        %(employee_id)s,
+                                        %(uom_id)s,
+                                        %(uom_id_r)s,
+                                        %(ftp)s,
+                                        %(state)s,
+                                        %(work_id)s,
+                                        %(sequence)s,
+                                        %(zone)s,
+                                        %(zo)s,
+                                        %(secteur)s,
+                                        %(wiz_id)s,
+                                        %(is_display)s
+                                    )
+                                """
 
-                                INSERT INTO base_group_merge_line2 (
-                                    step_id,
-                                    task_id,
-                                    categ_id,
-                                    product_id,
-                                    name,
-                                    date_start,
-                                    date_end,
-                                    poteau_i,
-                                    poteau_t,
-                                    color,
-                                    total_t,
-                                    project_id,
-                                    etape,
-                                    gest_id,
-                                    employee_id,
-                                    uom_id,
-                                    uom_id_r,
-                                    ftp,
-                                    state,
-                                    work_id,
-                                    sequence,
-                                    zone,
-                                    secteur,
-                                    wiz_id,
-                                    is_display,
-                                    pos
-                                )
+                                # Define the parameters for parameter binding
+                                params = {
+                                    'task_id': s2.task_id.id,
+                                    'categ_id': s2.categ_id.id,
+                                    'product_id': s2.product_id.id,
+                                    'name': s2.name.replace(' - Secteur ' + str(s2.secteur), '') + ' - Secteur ' + str(
+                                        hh),
+                                    'date_start': date_from,
+                                    'date_end': date_to,
+                                    'poteau_i': s2.poteau_t,
+                                    'poteau_t': poteau_t,
+                                    'color': s2.color,
+                                    'total_t': s2.total_t,
+                                    'project_id': s2.project_id.id or None,
+                                    'etape': s2.etape,
+                                    'gest_id': s2.gest_id.id or None,
+                                    'employee_id': employee or None,
+                                    'uom_id': s2.uom_id.id or None,
+                                    'uom_id_r': s2.uom_id.id or None,
+                                    'ftp': s2.ftp,
+                                    'state': s2.state,
+                                    'work_id': s2.id,
+                                    'sequence': res[0] + 1,
+                                    'zone': 0,
+                                    'zo': str(jj.zone),
+                                    'secteur': hh,
+                                    'wiz_id': current.id,
+                                    'is_display': is_display
+                                }
+                                self.env.cr.execute(sql_query, params)
+                        elif jj.zone > 0 and jj.secteur > 0:
+                            for hh in range(jj.zone, jj.zone + 1):
+                                for vv in range(jj.secteur, jj.secteur_to + 1):
+                                    if jj.employee_id:
+                                        employee = jj.employee_id.id
+                                    else:
+                                        employee = s2.employee_id.id or False
+                                    if jj.date_from:
+                                        date_from = jj.date_from
+                                    else:
+                                        date_from = s2.date_start
+                                    if jj.date_to:
+                                        date_to = jj.date_to
+                                    else:
+                                        date_to = s2.date_end
+                                    if jj.poteau_t:
+                                        poteau_t = jj.poteau_t
+                                    else:
+                                        poteau_t = s2.poteau_t
+                                    if jj.is_display is True:
+                                        is_display = True
+                                    else:
+                                        is_display = False
+                                    sequence_w += 1
+                                    # Construct the INSERT query
+                                    sql_query = """
 
-                                VALUES (
-                                    %(step_id)s,                                    
-                                    %(task_id)s,
-                                    %(categ_id)s,
-                                    %(product_id)s,
-                                    %(name)s,
-                                    %(date_start)s,
-                                    %(date_end)s,
-                                    %(poteau_i)s,
-                                    %(poteau_t)s,
-                                    %(color)s,
-                                    %(total_t)s,
-                                    %(project_id)s,
-                                    %(etape)s,
-                                    %(gest_id)s,
-                                    %(employee_id)s,
-                                    %(uom_id)s,
-                                    %(uom_id_r)s,
-                                    %(ftp)s,
-                                    %(state)s,
-                                    %(work_id)s,
-                                    %(sequence)s,
-                                    %(zone)s,
-                                    %(secteur)s,
-                                    %(wiz_id)s,
-                                    %(is_display)s,
-                                    %(pos)s
-                                )
-                            """
+                                        INSERT INTO base_group_merge_line2 (
 
-                            # Define the parameters for parameter binding
-                            params = {
-                                'step_id': s2.step_id.id,
-                                'task_id': s2.task_id.id,
-                                'categ_id': s2.categ_id.id,
-                                'product_id': s2.product_id.id,
-                                'name': task_name,
-                                'date_start': date_from,
-                                'date_end': date_to,
-                                'poteau_i': s2.poteau_t,
-                                'poteau_t': poteau_t,
-                                'color': s2.color,
-                                'total_t': s2.total_t,
-                                'project_id': s2.project_id.id or None,
-                                'etape': s2.etape,
-                                'gest_id': s2.gest_id.id or None,
-                                'employee_id': employee or None,
-                                'uom_id': s2.uom_id.id or None,
-                                'uom_id_r': s2.uom_id.id or None,
-                                'ftp': s2.ftp,
-                                'state': s2.state,
-                                'work_id': s2.id,
-                                'sequence': res[0] + 1,
-                                'zone': jj.zone.upper(),
-                                'secteur': chr(hh).upper(),
-                                'wiz_id': current.id,
-                                'is_display': is_display,
-                                'pos': s2.pos
-                            }
-                            self.env.cr.execute(sql_query, params)
+                                            task_id,
+                                            categ_id,
+                                            product_id,
+                                            name,
+                                            date_start,
+                                            date_end,
+                                            poteau_i,
+                                            poteau_t,
+                                            color,
+                                            total_t,
+                                            project_id,
+                                            gest_id,
+                                            employee_id,
+                                            uom_id,
+                                            uom_id_r,
+                                            ftp,
+                                            state,
+                                            work_id,
+                                            zone,
+                                            secteur,
+                                            wiz_id,
+                                            sequence,
+                                            etape,
+                                            zo,
+                                            is_display
+                                        )
+
+                                        VALUES (
+                                            %(task_id)s,
+                                            %(categ_id)s,
+                                            %(product_id)s,
+                                            %(name)s,
+                                            %(date_start)s,
+                                            %(date_end)s,
+                                            %(poteau_i)s,
+                                            %(poteau_t)s,
+                                            %(color)s,
+                                            %(total_t)s,
+                                            %(project_id)s,
+                                            %(gest_id)s,
+                                            %(employee_id)s,
+                                            %(uom_id)s,
+                                            %(uom_id_r)s,
+                                            %(ftp)s,
+                                            %(state)s,
+                                            %(work_id)s,
+                                            %(zone)s,
+                                            %(secteur)s,
+                                            %(wiz_id)s,
+                                            %(sequence)s,
+                                            %(etape)s,
+                                            %(zo)s,
+                                            %(is_display)s
+                                        )
+                                    """
+
+                                    # Define the parameters for parameter binding
+
+                                    params = {
+                                        'task_id': s2.task_id.id,
+                                        'categ_id': s2.categ_id.id,
+                                        'product_id': s2.product_id.id,
+                                        'name': s2.name.replace(' - Secteur ' + str(s2.secteur), '') + ' - Zone ' + str(
+                                            hh) + ' - Secteur ' + str(vv),
+                                        'date_start': date_from,
+                                        'date_end': date_to,
+                                        'poteau_i': s2.poteau_t,
+                                        'poteau_t': poteau_t,
+                                        'color': s2.color,
+                                        'total_t': s2.total_t,
+                                        'project_id': s2.project_id.id or None,
+                                        'gest_id': s2.gest_id.id or None,
+                                        'employee_id': employee or None,
+                                        'uom_id': s2.uom_id.id or None,
+                                        'uom_id_r': s2.uom_id.id or None,
+                                        'ftp': s2.ftp,
+                                        'state': s2.state,
+                                        'work_id': s2.id,
+                                        'zone': hh,
+                                        'secteur': vv,
+                                        'wiz_id': current.id,
+                                        'sequence': res[0] + 1,
+                                        'etape': s2.etape,
+                                        'zo': str(hh),
+                                        'is_display': is_display
+
+                                    }
+
+                                    # Execute the query with parameter binding
+
+                                    self.env.cr.execute(sql_query, params)
+                        elif jj.zone > 0 and jj.secteur == 0:
+                            for hh in range(jj.zone, jj.zone + 1):
+                                if jj.employee_id:
+                                    employee = jj.employee_id.id
+                                else:
+                                    employee = s2.employee_id.id or False
+                                if jj.date_from:
+                                    date_from = jj.date_from
+                                else:
+                                    date_from = s2.date_start
+                                if jj.date_to:
+                                    date_to = jj.date_to
+                                else:
+                                    date_to = s2.date_end
+                                if jj.poteau_t:
+                                    poteau_t = jj.poteau_t
+                                else:
+                                    poteau_t = s2.poteau_t
+                                if jj.is_display is True:
+                                    is_display = True
+                                else:
+                                    is_display = False
+                                    sequence_w = sequence_w + 1
+
+                                    sql_query = """
+                                    
+                                        INSERT INTO base_group_merge_line2 (
+                                            task_id,
+                                            categ_id,
+                                            product_id,
+                                            name,
+                                            date_start,
+                                            date_end,
+                                            poteau_i,
+                                            poteau_t,
+                                            color,
+                                            total_t,
+                                            project_id,
+                                            gest_id,
+                                            employee_id,
+                                            uom_id,
+                                            uom_id_r,
+                                            ftp,
+                                            state,
+                                            work_id,
+                                            zone,
+                                            zo,
+                                            secteur,
+                                            wiz_id,
+                                            sequence,
+                                            etape,
+                                            is_display
+                                        )
+                                                
+                                        VALUES (
+                                            %(task_id)s,
+                                            %(categ_id)s,
+                                            %(product_id)s,
+                                            %(name)s,
+                                            %(date_start)s,
+                                            %(date_end)s,
+                                            %(poteau_i)s,
+                                            %(poteau_t)s,
+                                            %(color)s,
+                                            %(total_t)s,
+                                            %(project_id)s,
+                                            %(gest_id)s,
+                                            %(employee_id)s,
+                                            %(uom_id)s,
+                                            %(uom_id_r)s,
+                                            %(ftp)s,
+                                            %(state)s,
+                                            %(work_id)s,
+                                            %(zone)s,
+                                            %(zo)s,
+                                            %(secteur)s,
+                                            %(wiz_id)s,
+                                            %(sequence)s,
+                                            %(etape)s,
+                                            %(is_display)s
+                                        )
+                                    """
+
+                                    params = {
+                                        'task_id': s2.task_id.id,
+                                        'categ_id': s2.categ_id.id,
+                                        'product_id': s2.product_id.id,
+                                        'name': s2.name + ' - Zone ' + str(hh),
+                                        'date_start': date_from,
+                                        'date_end': date_to,
+                                        'poteau_i': s2.poteau_t,
+                                        'poteau_t': poteau_t,
+                                        'color': s2.color,
+                                        'total_t': s2.total_t,
+                                        'project_id': s2.project_id.id or None,
+                                        'gest_id': s2.gest_id.id or None,
+                                        'employee_id': employee or None,
+                                        'uom_id': s2.uom_id.id or None,
+                                        'uom_id_r': s2.uom_id.id or None,
+                                        'ftp': s2.ftp,
+                                        'state': s2.state,
+                                        'work_id': s2.id,
+                                        'zone': hh,
+                                        'zo': str(jj.hh),
+                                        'secteur': 0,
+                                        'wiz_id': current.id,
+                                        'sequence': res[0] + 1,
+                                        'etape': s2.etape,
+                                        'is_display': is_display
+                                    }
+
+                                    self.env.cr.execute(sql_query, params)
+        return True
 
     def apply_(self):
         current = self[0]
-        cr_ids = []
+
         if current.project_id:
+            print('START')
             if not current.line_ids1:
                 raise UserError(_("Action impossible!'\nAucune Ligne à Créer!"))
             for s2 in current.line_ids1:
                 if current.exist is True:
                     found = self.env['project.task.work'].search([('project_id', '=', current.project_id.id),
-                                                                  ('zone', '=', ord(s2.zone)),
-                                                                  ('secteur', '=', ord(s2.secteur))])
-
-               # TODO check functionality
+                                                                  ('zone', '=', s2.zone),
+                                                                  ('secteur', '=', s2.secteur)])
 
                 seq = s2.sequence + 1
                 kk = self.env['project.task.work'].search([('project_id', '=', current.project_id.id),
@@ -397,62 +610,115 @@ class EbMergeTasks(models.Model):
                     kk = self.env['project.task.work'].search([('project_id', '=', current.project_id.id),
                                                                ('sequence', '=', seq)])
             for jj in current.line_ids:
-                for hh in range(ord(jj.secteur.upper()), ord(jj.secteur_to.upper()) + 1):
-                    pr = self.env['project.project'].create({
-                        'date': fields.date.today(),
-                        'resp_id': current.project_id.resp_id.id or False,
-                        'fees_id': current.project_id.fees_id.id or False,
-                        'bord': current.project_id.bord,
-                        'npc': current.project_id.npc + ' - Zone ' + jj.zone.upper() + ' Secteur ' + chr(hh).upper(),
-                        'date_start': current.project_id.date_start,
-                        'date_end': current.project_id.date_end,
-                        'state_id': current.project_id.state_id.id,
-                        'city': current.project_id.city,
-                        'ftp': current.project_id.ftp,
-                        'priority': current.project_id.priority,
-                        'ref': current.project_id.ref,
-                        'km': current.project_id.km,
-                        'partner_id': current.partner_id.id,
-                        'country_id': current.project_id.country_id.id,
-                        'type3': current.project_id.type3.id,
-                        'zone': jj.zone.upper(),
-                        'secteur': chr(hh).upper(),
-                        'parent_id1': current.project_id.id,
-                        'state': 'open'
-                    })
-                    cr_ids.append(pr.id)
+                for hh in range(jj.secteur, jj.secteur_to + 1):
+                    print('Zone :', jj.zone, 'Secteur : ', hh)
+                    ##                    pr = self.env['project.project'].create({
+                    ##                        'date': fields.date.today(),
+                    ##                        'resp_id': current.project_id.resp_id.id or False,
+                    ##                        'fees_id': current.project_id.fees_id.id or False,
+                    ##                        'bord': current.project_id.bord,
+                    ##                        'npc': current.project_id.npc + ' - Z' + str(jj.zone) + ' S' + str(hh),
+                    ##                        'date_start': current.project_id.date_start,
+                    ##                        'date_end': current.project_id.date_end,
+                    ##                        'state_id': current.project_id.state_id.id,
+                    ##                        'city': current.project_id.city,
+                    ##                        'ftp': current.project_id.ftp,
+                    ##                        'priority': current.project_id.priority,
+                    ##                        'ref': current.project_id.ref,
+                    ##                        'km': current.project_id.km,
+                    ##                        'partner_id': current.partner_id.id,
+                    ##                        'country_id': current.project_id.country_id.id,
+                    ##                        'type3': current.project_id.type3.id,
+                    ##                        'zone': jj.zone,
+                    ##                        'secteur': hh,
+                    ##                        'parent_id1': current.project_id.id
+                    ##                    })
                     for s2 in current.line_ids1:
-                        if s2.task_id.kit_id and s2.zone == pr.zone and s2.secteur == pr.secteur:
+                        if s2.task_id.kit_id:
                             query = """
                                 INSERT INTO project_task_work (
-                                    step_id, kit_id, task_id, categ_id, product_id, name, uom_id, date_start, date_end,
+                                    kit_id, task_id, categ_id, product_id, name, uom_id, date_start, date_end,
                                     poteau_i, poteau_t, color, hours, total_t, project_id, gest_id, uom_id_r,
                                     etape, state, zone, secteur, sequence, active, w_id, display, zo, sect,
-                                    gest_id3, current_gest, current_sup, partner_id, work_orig, pr_project_id, pos
+                                    gest_id3, current_gest, current_sup, partner_id, work_orig, pr_project_id, is_copy
                                 )
                                 VALUES (
-                                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                                    %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
                                     %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                                 )
                             """
                             values = (
-                                s2.step_id.id, s2.task_id.kit_id.id, s2.task_id.id, s2.categ_id.id, s2.product_id.id,
+                                s2.task_id.kit_id.id, s2.task_id.id, s2.categ_id.id, s2.product_id.id,
                                 s2.name.replace("'", "''"), s2.uom_id.id, s2.date_start, s2.date_end,
-                                s2.poteau_i, s2.poteau_t, int(s2.color), s2.hours, s2.total_t, pr.id,
+                                s2.poteau_i, s2.poteau_t, int(s2.color), s2.hours, s2.total_t, s2.project_id.id,
                                 s2.gest_id.id or None, s2.uom_id.id, s2.etape, 'draft',
-                                ord(s2.zone), ord(s2.secteur), seq, True, current.id, s2.is_display,
-                                'Zone ' + s2.zone, 'Secteur ' + s2.secteur,
+                                s2.zone, s2.secteur, seq, True, current.id, s2.is_display,
+                                'Zone ' + s2.zo, 'Secteur ' + str(s2.secteur).zfill(2),
                                 s2.task_id.coordin_id.id or None, s2.task_id.coordin_id.id or None,
                                 s2.gest_id.id or None, s2.project_id.partner_id.id or None, s2.id or None,
-                                current.project_id.id, s2.pos
+                                current.project_id.id, True
                             )
                             self.env.cr.execute(query, values)
 
-            del_ids = self.env['project.task'].search([('project_id', 'in', cr_ids)]).ids
-            for tt in del_ids:
-                self.env['project.task'].browse(tt).unlink()
-
-            self.env['project.project'].browse(current.project_id.id).write({'is_parent': True})
+                    # else:
+                    #     for s3 in current.work_ids:
+                    #         self.env.cr.execute(
+                    #             "INSERT INTO project_task_work (task_id,categ_id,product_id,name,uom_id,date_start,date_end," \
+                    #             " poteau_i,poteau_t,color,hours,total_t,project_id,gest_id,uom_id_r,etape,state,zone,secteur,sequence,active,w_id,display,zo,sect,gest_id3,current_gest,current_sup,partner_id,work_orig) VALUES" \
+                    #             " ('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%s,'%s','%s','%s','%s','%s','%s','%s','%s','%s','%s','%s',%s,%s,'%s',%s,%s)"
+                    #             % (s2.task_id.id, s2.categ_id.id, s2.product_id.id,
+                    #                s2.name.replace("'", "''"), s2.uom_id.id,
+                    #                s2.date_start, s2.date_end, s2.poteau_i, s2.poteau_t,
+                    #                int(s2.color), s2.hours, s2.total_t, s2.project_id.id, s2.gest_id.id,
+                    #                s2.uom_id.id, s2.etape, 'draft', s2.zone, s2.secteur, seq, True,
+                    #                current.id, s2.is_display, 'Zone ' + s2.zo, 'Secteur ' + str(s2.secteur).zfill(2),
+                    #                int(s2.task_id.coordin_id.id) or None, int(s2.task_id.coordin_id.id) or None, int(s2.gest_id.id) or None,
+            ##                               int(s2.task_id.reviewer_id1.id) or None, int(s2.task_id.coordin_id1.id) or None,
+            ##                               int(s2.task_id.coordin_id2.id) or None,
+            ##                               int(s2.task_id.coordin_id3.id) or None, int(s2.task_id.coordin_id4.id) or None,
+            ##                               int(s2.task_id.coordin_id5.id) or None,
+            ##                               int(s2.task_id.coordin_id6.id) or None, int(s2.task_id.coordin_id7.id) or None,
+            ##                               int(s2.task_id.coordin_id8.id) or None,
+            ##                               int(s2.task_id.coordin_id9.id) or None,
+            ##                               int(s2.task_id.coordin_id10.id) or None,
+            # int(s2.project_id.partner_id.id) or None, int(s2.id)))
+            # self.env.cr.execute(
+            #     "select id from project_task_work where project_id=%s and task_id=%s and zone=%s and secteur=%s",
+            #     (s2.project_id.id, s2.task_id.id, s2.zone, s2.secteur))
+            # sql_result = self.env.cr.fetchone()
+            # sql_work = self.env['work.histo'].search([('work_id', '=', s3.id)])
+            # if sql_work:
+            #     histo_values = {
+            #         'task_id': s2.task_id.id,
+            #         'work_id': sql_result,
+            #         'categ_id': s2.categ_id.id,
+            #         'product_id': s2.product_id.id,
+            #         'name': s2.name,
+            #         'work_sup_id': sql_work[0],
+            #         'date': s2.date_start,
+            #         'create_a': datetime.now(),
+            #         'create_by': res_user.employee_id.name,
+            #         'zone': s2.zone,
+            #         'secteur': s2.secteur,
+            #         'project_id': s2.project_id.id,
+            #         'partner_id': s2.project_id.partner_id.id,
+            #     }
+            # else:
+            #     histo_values = {
+            #         'task_id': s2.task_id.id,
+            #         'work_id': sql_result,
+            #         'categ_id': s2.categ_id.id,
+            #         'product_id': s2.product_id.id,
+            #         'name': s2.name,
+            #         'date': s2.date_start,
+            #         'create_a': datetime.now(),
+            #         'create_by': res_user.employee_id.name,
+            #         'zone': s2.zone,
+            #         'secteur': s2.secteur,
+            #         'project_id': s2.project_id.id,
+            #         'partner_id': s2.project_id.partner_id.id,
+            #     }
+            # histo = self.env['work.histo'].create(histo_values)
 
             if len(current.work_ids) > 0:
                 for s3 in current.work_ids:
@@ -475,7 +741,6 @@ class EbMergeTasks(models.Model):
                 if len(v) > 0:
                     ll1 = self.env['project.task.work'].search([
                         ('project_id', '=', current.project_id.id),
-                        ('state', 'in', ('draft', 'affect')),
                         ('kit_id', 'in', v),
                         ('active', '=', True),
                         ('is_copy', '=', False),
@@ -484,13 +749,10 @@ class EbMergeTasks(models.Model):
                     res_cpt = ll1.ids
 
                     for kk in res_cpt:
-                        if current.type == '1':
-                            self.env['project.task.work'].browse(kk).write({'active': False, 'w_id': current.id})
-                        else:
-                            if current.choix == '2':
-                                self.env['project.task.work'].browse(kk).write({'active': False, 'w_id': current.id})
-                            else:
-                                self.env['project.task.work'].browse(kk).write({'w_id': current.id})
+                        task_work = self.env['project.task.work'].browse(kk)
+                        task_work.write({'w_id': current.id})
+                        if task_work.state in ('draft', 'affect'):
+                            task_work.write({'active': False})
 
             self.write({'state': 'open'})
             return {
@@ -507,21 +769,19 @@ class EbMergeTasks(models.Model):
         if found:
             for work in found:
                 raise UserError(
-                    _("Attention!\nAn assignment is made with this configuration: Project %s, Zone: %s, Secteur: %s, Intervenant: %s") % (
+                    _("Attention!\nAn assignment is made with this configuration: Project %s, Zone: %s, Secteur: %s, "
+                      "Intervenant: %s") % (
                         current.project_id.npc, work.zone, work.secteur, work.employee_id.name))
-        sub_ids = self.env['project.task.work'].search([('w_id', '=', current.id)]).ids
-        for tt in sub_ids:
-            self.env['project.task.work'].browse(tt).unlink()
-        for tt in current.project_id.child_ids.ids:
-            self.env['project.project'].browse(tt).unlink()
+        to_delete_ids = self.env['project.task.work'].search([('w_id', '=', current.id), ('is_copy', '=', True)]).ids
+        for to_delete_id in to_delete_ids:
+            self.env['project.task.work'].browse(to_delete_id).unlink()
 
-        del_ids = self.env['project.task.work'].search([('w_id', '=', current.id), ('active', '=', False)]).ids
-        for tt in del_ids:
-            self.env['project.task.work'].browse(tt).write({'w_id': False, 'active': True})
+        archived_ids = self.env['project.task.work'].search([('w_id', '=', current.id), ('active', '=', False)]).ids
+        if archived_ids:
+            for archived_id in archived_ids:
+                self.env['project.task.work'].browse(archived_id).write({'w_id': False, 'active': True})
 
         current.state = 'draft'
-
-        self.env['project.project'].browse(current.project_id.id).write({'is_parent': False})
 
         return {
             'name': _('Annulation faite avec Succès'),
@@ -636,26 +896,20 @@ class EbMergeTasks(models.Model):
         ('both', 'Actives et Archivées')
     ], string='Keep', default='active')
 
-    @api.model
     def default_get(self, fields_list):
         res = super(EbMergeTasks, self).default_get(fields_list)
-        if 'active_model' in self.env.context:
-            all_task_ids = self.env.context.get('task_ids')
-            task_divide_ids = []
-            for task_id in all_task_ids:
-                task = self.env['project.task'].browse(task_id)
-                if task.step_id.is_divide:
-                    task_divide_ids.append(task_id)
-            res.update({'type': '1', 'task_ids': task_divide_ids,
-                        'project_id': self.env.context.get('project_id'),
-                        'partner_id': self.env.context.get('partner_id')})
+        # J'ai mis à jour la signature de la méthode pour utiliser fields_list.
+        # De plus, j'ai remplacé res['task_ids'] = active_ids par res.update({'task_ids': active_ids})
+        # pour garantir le comportement correct en cas d'autres valeurs existantes dans le dictionnaire.
+        active_ids = self.env.context.get('active_ids')
+        # vérifie si le modèle actif (le modèle à partir duquel cette méthode est appelée) est égal à 'project.task' et s'il existe des active_ids dans le contexte.
+        if self.env.context.get('active_model') == 'project.task' and active_ids:
+            # Si les conditions sont satisfaites, elle met à jour le dictionnaire res en ajoutant la clé 'task_ids' avec la valeur des active_ids.
+            # La méthode update est utilisée pour garantir que les autres valeurs du dictionnaire ne sont pas écrasées.
+            res.update({'task_ids': active_ids})
         return res
 
-    def button_divide(self):
-        self.show_results()
-        self.apply_()
-
-    # Cette méthode utilise le décorateur @api.depends pour indiquer que le calcul du champ disponible doit dépendre de la valeur du champ project_id.user_id
+        # Cette méthode utilise le décorateur @api.depends pour indiquer que le calcul du champ disponible doit dépendre de la valeur du champ project_id.user_id
         # Lorsque cette méthode est exécutée, elle itère sur chaque enregistrement (book) pour effectuer les opérations suivantes :
         # vérifie si l'ID de l'utilisateur associé au champ 'user_id' de l'enregistrement 'book.project_id' est égal à l'ID de l'utilisateur actuellement connecté (self.env.user.id).
         # Si les deux ID correspondent, cela signifie que l'utilisateur actuel est associé au projet correspondant à 'book.project_id'. Dans ce cas, le champ 'disponible' de 'book' est défini sur 'True'.
@@ -734,7 +988,6 @@ class EbMergeTasks(models.Model):
 
     @api.onchange('year_no', 'week_no')
     def onchange_week_(self):
-
         # The result variable is no longer used since the method directly assigns values to the fields.
         if self.year_no and self.week_no:  # The method now uses the self parameter to access the field values.
             d = date(self.year_no, 1, 1)
@@ -751,7 +1004,6 @@ class EbMergeTasks(models.Model):
 
     @api.onchange('project_id')
     def onchange_project_id(self):
-
         if self.project_id:
             self.task_ids = False
             self.work_ids = False
@@ -766,7 +1018,6 @@ class EbMergeTasks(models.Model):
 
     @api.onchange('project_id', 'task_ids')
     def onchange_project_id(self):
-
         ltask1 = []
         ltask2 = []
         zz = []
@@ -778,9 +1029,10 @@ class EbMergeTasks(models.Model):
                 if self.project_id.is_kit and task.kit_id.id not in ltask1:
                     ltask1.append(task.kit_id.id)
                     ltask2.append(task.id)
-                elif 'Etape' in task.product_id.name and task.product_id.name not in ltask1:
-                    ltask1.append(task.product_id.name)
-                    ltask2.append(task.id)
+                elif task.product_id:
+                    if 'Etape' in task.product_id.name and task.product_id.name not in ltask1:
+                        ltask1.append(task.product_id.name)
+                        ltask2.append(task.id)
 
             zz = self.env['project.task'].search([('id', 'in', ltask2)], order='sequence asc').ids
 
@@ -788,7 +1040,6 @@ class EbMergeTasks(models.Model):
 
     @api.onchange('project_id', 'task_ids', 'zone', 'secteur', 'keep', 'type')
     def onchange_categ_id(self):
-
         list_ = []
         list1 = []
         list2 = []

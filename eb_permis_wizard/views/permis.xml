@@ -29,25 +29,11 @@
                         <field name="work_ids" nolabel="1"
                                domain="[('project_id','=',project_id),('categ_id','=',6),('name','ilike','Permis'),('name','not like','Demande')]"
                                options="{'no_open':True}">
-                            <tree colors="blue:state== 'draft';green:state== 'affect';purple:state== 'tovalid'"
-                                  edit="false" delete="false" editable="bottom" string="Liste des Permis">
-                                <field name="id" string="id" invisible="1"/>
-                                <field name="project_id" invisible="context.get('user_invisible', False)" readonly="1"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                                       string="Projet"/>
+                            <tree editable="bottom" string="Liste des Permis">
                                 <field name="name" string="Nom Travaux" readonly="1"
                                        options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
-                                <field name="product_id" invisible="context.get('user_invisible', False)" readonly="1"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                                       string="Type Service"/>
-                                <field name="date_start" string="Date Start" widget="date" readonly="1"/>
-                                <field name="date_end" string="Date Fin" widget="date" readonly="1"/>
-                                <field name="color" string="Durée (Jours)" sum="Total" readonly="1"/>
-                                <field name="uom_id" string="Unité" sum="Total"
-                                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
-                                       readonly="1"/>
-                                <field name="qte" string="Qté/Unité" sum="Total" readonly="1"/>
-                                <field name="state" string="Statut" readonly="1"/>
+                                <field name="qte_permis" string="Qté"/>
+                                <field name="state" string="Statut" readonly="1" invisible="1"/>
                             </tree>
                         </field>
                     </group>

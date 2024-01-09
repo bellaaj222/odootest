@@ -26,7 +26,6 @@
         'views/product.xml',
         'views/kit.xml',
         'views/category.xml',
-        'views/step.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

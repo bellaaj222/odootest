@@ -1,26 +1,5 @@
 <odoo>
     <data>
-
-        <record id="view_kit_form_popup" model="ir.ui.view">
-            <field name="name">kit.form.popup</field>
-            <field name="model">product.kit</field>
-            <field name="arch" type="xml">
-                <form string="Picking Types">
-                    <sheet>
-                        <group>
-                            <field name="type_ids" string="Liste des Articles"
-                                   nolabel="1" readonly="1">
-                                <tree>
-                                    <field name="default_code" string="code"/>
-                                    <field name="name" string="Nom Service"/>
-                                </tree>
-                            </field>
-                        </group>
-                    </sheet>
-                </form>
-            </field>
-        </record>
-
         <record id="view_kit_form" model="ir.ui.view">
             <field name="name">kit.form</field>
             <field name="model">product.kit</field>
@@ -31,8 +10,7 @@
                             <group>
                                 <field name="name" string="Nom Kit"/>
                                 <field name="description"/>
-                                <field name="type_ids" string="Liste des Articles"
-                                       domain="[('categ_id', '=', categ_id)]">
+                                <field name="type_ids" string="Liste des Articles">
                                     <tree>
                                         <field name="default_code" string="code"/>
                                         <field name="name" string="Nom Service"/>

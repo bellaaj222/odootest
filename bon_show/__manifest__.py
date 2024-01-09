@@ -29,6 +29,7 @@
         'views/ft.xml',
         'views/inherit.xml',
         'views/dash.xml',
+        'views/show_line2.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

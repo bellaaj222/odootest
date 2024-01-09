@@ -6,92 +6,68 @@ from datetime import datetime as dt
 from odoo.exceptions import UserError
 from odoo.tools.translate import _
 import math
+from datetime import timedelta
 
 
 class TaskWork(models.Model):
     _name = 'project.task.work'
     _description = 'Project Task Work'
-    _rec_name = 'name'
+    _rec_name = 'id'
 
-    # recently added :
-    web_diagram_id = fields.Many2one(
-        'web.diagram.plus', 'Web Diagram', ondelete='cascade',
-        required=True, index=True, tracking=True)
-    date_start_s = fields.Date(string='Date Début Etape')
-    date_end_s = fields.Date(string='Date Fin Etape')
-    # end.
-    state_prod = fields.Selection([('draft', 'T. Planifiées'),
-                                   ('affect', 'T. Affectées'),
-                                   ('started', 'T. Commencées'),
-                                   ('pending', 'T. En cours'),
-                                   ('valid', 'T. Terminées'),
-                                   ('cancel', 'T. Annulées'),
-                                   ('suspended', 'T. Bloqées'),
-                                   ],
-                                  string='Status Prod', copy=False, default='draft')
-    stage = fields.Selection([('prod', 'Production'),
-                              ('ctrl', 'Contrôle'),
-                              ('corr', 'Correction'),
-                              ],
-                             string='Phase', copy=False, default='prod')
-    prod_str = fields.Char('str', default='Production')
-    ctrl_str = fields.Char('str', default='Contrôle')
-    corr_str = fields.Char('str', default='Correction')
-    employee_ids_production2 = fields.Many2many('hr.employee', 'project_task_work_employee_production_rel',
-                                                string='Employés assignés production')
-    employee_ids_controle2 = fields.Many2many('hr.employee', 'project_task_work_employee_controle_rel',
-                                              string='Employés assignés contrôle')
-    employee_ids_correction2 = fields.Many2many('hr.employee', 'project_task_work_employee_correction_rel',
-                                                string='Employés assignés correction')
-    work_group_id = fields.Integer(string='Identifiant du groupe de travail', default='0')
-    to_duplicate = fields.Boolean(string='A dupliquer', default=True)
-    pos = fields.Integer(string='position dans le kit')
-    pr_project_id = fields.Many2one('project.project', 'project parent')
+    @api.depends_context('uid')
+    def _compute_can_affect(self):
+        for record in self:
+            record.can_affect = (self.env.user.has_group('project_custom.group_coordin_non_permis') or (
+                self.env.user.has_group('project_custom.group_coordin_permis')) or self.env.user.has_group(
+                'project_custom.group_supervisor') or self.env.user.has_group('project_custom.group_super_admin'))
+
+    can_affect = fields.Boolean(string='N.U - Can affect ?', compute='_compute_can_affect', method=True)
+    pr_project_id = fields.Many2one('project.project', 'Projet parent')
     intervenant_affect_ids = fields.One2many('intervenants.affect', 'task_work_id',
-                                             'Intervenants Affectés')
+                                             'N.U - Intervenants Affectés')
     priority = fields.Selection([('0', 'Faible'),
                                  ('1', 'Normale'),
                                  ('2', 'Elevée'),
                                  ('3', 'Urgent'),
                                  ('4', 'Très Urgent'),
                                  ('5', 'Super Urgent')], string='Priorité')
-    work_id = fields.Char(string='work ID')
-    work_id2 = fields.Char(string='work ID')
+    work_id = fields.Char(string='N.U - work ID')
+    work_id2 = fields.Char(string='N.U - work ID')
     name = fields.Char(string='Libellé Travaux', readonly=True, states={'draft': [('readonly', False)]}, )
     ftp = fields.Char(string='Lien FTP', readonly=True, states={'draft': [('readonly', False)]}, )
-    job = fields.Char(string='Job', readonly=True, states={'draft': [('readonly', False)]}, )
+    job = fields.Char(string='N.U - Job', readonly=True, states={'draft': [('readonly', False)]}, )
     date = fields.Datetime('Date Doc', index="1", readonly=True, states={'draft': [('readonly', False)]}, )
-    date_r = fields.Datetime(string='date', index="1", readonly=True, states={'draft': [('readonly', False)]}, )
-    date_p = fields.Date(string='date', index="1")
+    date_r = fields.Datetime(string='N.U - date', index="1", readonly=True, states={'draft': [('readonly', False)]}, )
+    date_p = fields.Date(string='N.U - date', index="1")
     date_start = fields.Date(string='Date Début', index="1", readonly=True, states={'draft': [('readonly', False)]}, )
     date_end = fields.Date(string='Date Fin', index="1", readonly=True, states={'draft': [('readonly', False)]}, )
     date_start_r = fields.Date(string='Date Début Réelle', index="1", readonly=True,
                                states={'affect': [('readonly', False)]}, )
     date_end_r = fields.Date(string='Date Fin Réelle', index="1", readonly=True,
                              states={'draft': [('readonly', False)]}, )
-    ex_state = fields.Char(string='ex')
+    ex_state = fields.Char(string='N.U - ex_state')
     project_id = fields.Many2one('project.project', string='Projet', ondelete='set null', select=True, readonly=True,
                                  states={'draft': [('readonly', False)]}, )
     task_id = fields.Many2one('project.task', string='Tache', ondelete='cascade', select="1", readonly=True,
                               states={'draft': [('readonly', False)]}, )
-    product_id = fields.Many2one('product.product', string='T. de Service', ondelete='cascade', select="1",
+    product_id = fields.Many2one('product.product', string='Type de Service', ondelete='cascade', select="1",
                                  readonly=True, states={'draft': [('readonly', False)]}, )
-    hours = fields.Float(string='Total Hrs Prévues', readonly=True, states={'draft': [('readonly', False)]}, )
+    hours = fields.Float(string='Nb Hrs Prév.', readonly=True, states={'draft': [('readonly', False)]}, )
     etape = fields.Char(string='Etape', readonly=True, states={'draft': [('readonly', False)]}, )
     categ_id = fields.Many2one('product.category', string='Département', readonly=True,
                                states={'draft': [('readonly', False)]}, )
-    hours_r = fields.Float(compute='_get_planned', string='Total Hrs Réalisées', readonly=True,
+    hours_r = fields.Float(compute='_get_planned', string='Nb Hrs Réal.', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    partner_id = fields.Many2one('res.partner', string='Clients', readonly=True,
+    partner_id = fields.Many2one('res.partner', string='Client', readonly=True,
                                  states={'draft': [('readonly', False)]}, )
     kit_id = fields.Many2one('product.kit', string='Nom Kit', ondelete='cascade', select="1",
                              readonly=True, states={'draft': [('readonly', False)]}, )
     total_t = fields.Float(string='Total à Facturer T', readonly=True, states={'draft': [('readonly', False)]}, )
-    total_r = fields.Float(compute='_get_sum', string='Total à Facturer R', readonly=True,
+    total_r = fields.Float(compute='_get_sum', string='Cout Réal.', readonly=True,
                            states={'draft': [('readonly', False)]}, )
     poteau_t = fields.Float(string='Qté demamdée', readonly=True, states={'draft': [('readonly', False)]}, )
     poteau_i = fields.Float(string='Qté T. Prévue', readonly=True, states={'draft': [('readonly', False)]}, )
-    poteau_r = fields.Float(compute='_get_qty', string='Qté/Unité Réalisée', readonly=True,
+    poteau_r = fields.Float(compute='_get_qty', string='Qté Réalisée', readonly=True,
                             states={'draft': [('readonly', False)]}, )
     poteau_da = fields.Float(compute='_get_qty_affect', string='Qté Déja Affect.', readonly=True,
                              states={'draft': [('readonly', False)]}, )
@@ -105,8 +81,8 @@ class TaskWork(models.Model):
     sequence = fields.Integer(string='Séq', select=True, readonly=True, states={'draft': [('readonly', False)]}, )
     state_id = fields.Many2one('res.country.state', string='Municipalités')
     city = fields.Char(string='Région', readonly=True)
-    state_id1 = fields.Many2one('res.country.state', string='state ID')
-    state_id2 = fields.Many2one('res.country.state', string='state 2 ID ')
+    state_id1 = fields.Many2one('res.country.state', string='N.U - state ID')
+    state_id2 = fields.Many2one('res.country.state', string='N.U - state 2 ID ')
     precision = fields.Char(string='Precision(P)')
     permis = fields.Char(string='Permis(P)')
     date_fin = fields.Date(string='Date Fin (P)')
@@ -122,7 +98,7 @@ class TaskWork(models.Model):
     action = fields.Char(string='Action(P)')
     pourc_t = fields.Float(string='% Avancement', readonly=True, states={'draft': [('readonly', False)]}, )
     pourc_f = fields.Float(string='% Dépense', readonly=True, states={'draft': [('readonly', False)]}, )
-    statut1 = fields.Many2one('project.status', string='Status', select=True)
+    statut1 = fields.Many2one('project.status', string='Etat Permis', select=True)
     statut = fields.Selection([('Encours', 'Encours'),
                                ('Soumise', 'Soumise'),
                                ('A l"Etude', 'A l"étude'),
@@ -150,23 +126,30 @@ class TaskWork(models.Model):
                                ('TPDP', 'En TP - Dérogation Partielle'),
                                ('TPSD', 'En TP - Sans Dérogation'),
                                ],
-                              string='Status', copy=False)
-    kanban_color = fields.Integer(compute='_check_color', string='Couleur')
-    zone = fields.Integer(string='Zone', readonly=True, states={'draft': [('readonly', False)]}, )
-    secteur = fields.Integer(string='Secteur', readonly=True, states={'draft': [('readonly', False)]}, )
+                              string='Status permis', copy=False)
+    kanban_color = fields.Integer(compute='_check_color', string='N.U - Couleur')
+    zone = fields.Integer(string='Zone - int', readonly=True, states={'draft': [('readonly', False)]}, )
+    secteur = fields.Integer(string='Secteur - int', readonly=True, states={'draft': [('readonly', False)]}, )
     zo = fields.Char(string='Zone', readonly=True, states={'draft': [('readonly', False)]}, )
     sect = fields.Char(string='Secteur', readonly=True, states={'draft': [('readonly', False)]}, )
-    user_id = fields.Many2one('res.users', string='user ID', select="1", readonly=True,
+    user_id = fields.Many2one('res.users', string='utilisateur', select="1", readonly=True,
                               states={'draft': [('readonly', False)]}, )
-    paylist_id = fields.Many2one('hr.payslip', string='playlist ID', select="1", readonly=True,
+    paylist_id = fields.Many2one('hr.payslip', string='N.U - playlist ID', select="1", readonly=True,
                                  states={'draft': [('readonly', False)]}, )
-    reviewer_id1 = fields.Many2one('hr.employee', string='Superviseur', readonly=True,
+    reviewer_id1 = fields.Many2one('hr.employee', string='Super', readonly=True,
                                    states={'draft': [('readonly', False)]}, )
-    gest_id = fields.Many2one('hr.employee', string='Coordinateur', readonly=True,
+    gest_id = fields.Many2one('hr.employee', string='Superviseur', readonly=True,
                               states={'draft': [('readonly', False)]}, )
-    gest_id2 = fields.Many2one('hr.employee', string='Coordinateur 2', readonly=True,
-                               states={'draft': [('readonly', False)]}, )
-    gest_id3 = fields.Many2one('hr.employee', string='Coordinateur 3', copy=True, readonly=True,
+    gest_id2 = fields.Many2many(
+        'hr.employee',
+        'automatic_merge_wizard_gest_ids2_rel',
+        'wizard_id',
+        'employee_id',
+        string='Coordinateur 2',
+        readonly=True,
+        states={'draft': [('readonly', False)]}
+    )
+    gest_id3 = fields.Many2one('hr.employee', string='Coord', copy=True, readonly=True,
                                states={'draft': [('readonly', False)]}, )
     coordin_id1 = fields.Many2one('hr.employee', string='Coordinateur 1', readonly=True,
                                   states={'draft': [('readonly', False)]}, )
@@ -188,11 +171,10 @@ class TaskWork(models.Model):
                                   states={'draft': [('readonly', False)]}, )
     coordin_id10 = fields.Many2one('hr.employee', string='Coordinateur 10', readonly=True,
                                    states={'draft': [('readonly', False)]}, )
-    employee_id = fields.Many2one('hr.employee', 'Employé', readonly=True, states={'draft': [('readonly', False)]}, )
-    issue_id = fields.Many2one('project.issue', 'Issue ID', select="1", readonly=True,
+    issue_id = fields.Many2one('project.issue', 'N.U', select="1", readonly=True,
                                states={'draft': [('readonly', False)]}, )
     dependency_task_ids = fields.Many2many('project.task.work', 'project_task_dependency_work_rel',
-                                           'dependency_work_id', 'work_id', string='Dependencies')
+                                           'dependency_work_id', 'work_id', string='N.U - Dependencies')
     state = fields.Selection([('draft', 'T. Planifiés'),
                               ('affect', 'T. Affectés'),
                               ('affect_con', 'T. Affectés controle'),
@@ -207,105 +189,127 @@ class TaskWork(models.Model):
                               ('cancel', 'T. Annulés'),
                               ('pending', 'T. Suspendus'),
                               ],
-                             string='Status', copy=False)
+                             string='Etat', copy=False)
     p_done = fields.Float(string='Qté Réalisée', readonly=True, states={'draft': [('readonly', False)]}, )
     note = fields.Text(string='N.U')
-    done = fields.Boolean(compute='_default_done', string='Company Currency', readonly=True,
+    done = fields.Boolean(compute='_default_done', string='N.U', readonly=True,
                           states={'draft': [('readonly', False)]}, )
-    done1 = fields.Boolean(compute='_default_done1', string='Company Currency', readonly=True,
+    done1 = fields.Boolean(compute='_default_done1', string='N.U', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    done2 = fields.Boolean(compute='_default_done2', string='Company Currency', readonly=True,
+    done2 = fields.Boolean(compute='_default_done2', string='N.U', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    done3 = fields.Boolean(compute='_default_done3', string='Company Currency', readonly=True,
+    done3 = fields.Boolean(compute='_default_done3', string='N.U', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    done4 = fields.Boolean(compute='_default_flow', string='Company Currency', readonly=True,
+    done4 = fields.Boolean(compute='_default_flow', string='N.U', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    color = fields.Integer(string='Nbdays', readonly=True, states={'draft': [('readonly', False)]}, )
+    color = fields.Integer(string='Nb Jrs Prév.', readonly=True, states={'draft': [('readonly', False)]}, )
     color1 = fields.Integer(string='Durée(Jours)', readonly=True, states={'affect': [('readonly', False)]}, )
-    uom_id = fields.Many2one('product.uom', string='Unité Prévue', required=False, readonly=True,
+    uom_id = fields.Many2one('product.uom', string='Unité', required=False, readonly=True,
                              states={'draft': [('readonly', False)]}, )
     uom_id_r = fields.Many2one('product.uom', string='Unité Réelle', readonly=True,
                                states={'affect': [('readonly', False)]}, )
-    pourc = fields.Float('Pour C', readonly=True, states={'draft': [('readonly', False)]}, )
-    rank = fields.Char('Rank', readonly=True, states={'draft': [('readonly', False)]}, )
+    pourc = fields.Float('N.U', readonly=True, states={'draft': [('readonly', False)]}, )
+    rank = fields.Char('N.U - Rank', readonly=True, states={'draft': [('readonly', False)]}, )
     display = fields.Boolean(string='Réalisable')
-    is_copy = fields.Boolean(string='Dupliqué', default=False)
-    done33 = fields.Boolean(compute='_disponible', string='done')
-    current_emp = fields.Many2one('hr.employee', string='Employé Encours', readonly=True,
-                                  states={'draft': [('readonly', False)]}, )
+    is_copy = fields.Boolean(string='Duplic.?', default=False)
+    done33 = fields.Boolean(compute='_disponible', string='N.U')
+    employee_id = fields.Many2many(
+        'hr.employee',
+        'automatic_merge_wizard_employee_ids_rel',
+        'wizard_id',
+        'employee_id',
+        string='Employé',
+        readonly=True,
+        states={'draft': [('readonly', False)]}
+    )
+    current_emp = fields.Many2many(
+        'hr.employee',
+        'automatic_merge_wizard_current_emp_rel',
+        'wizard_id',
+        'employee_id',
+        string='Employé Encours',
+        readonly=True,
+        states={'draft': [('readonly', False)]}
+    )
     current_gest = fields.Many2one('hr.employee', string='Coordinateur En cours', readonly=True,
                                    states={'draft': [('readonly', False)]}, )
     current_sup = fields.Many2one('hr.employee', string='Superviseur En cours', readonly=True,
                                   states={'draft': [('readonly', False)]}, )
-    prior1 = fields.Float(string='Prior1', readonly=True, states={'draft': [('readonly', False)]}, )
-    prior2 = fields.Float(string='Prior2', readonly=True, states={'draft': [('readonly', False)]}, )
-    cmnt = fields.Char(string='Prior2', readonly=True, states={'draft': [('readonly', False)]}, )
+    prior1 = fields.Float(string='N.U - Prior1', readonly=True, states={'draft': [('readonly', False)]}, )
+    prior2 = fields.Float(string='N.U - Prior2', readonly=True, states={'draft': [('readonly', False)]}, )
+    cmnt = fields.Char(string='N.U', readonly=True, states={'draft': [('readonly', False)]}, )
     work_orig = fields.Integer(string='tache original')
-    affect_emp_list = fields.Char(string='employée id')
-    affect_e_l = fields.Char(string='employée id')
-    affect_emp = fields.Char(string='employée')
-    affect_con = fields.Char(string='controle')
-    affect_cor = fields.Char(string='corrdinateur')
-    affect_con_list = fields.Char(string='controle id')
-    affect_cor_list = fields.Char(string='corrdinateur id')
-    is_intervenant = fields.Boolean(compute='_isinter', string='intervenant')
-    is_control = fields.Boolean(compute='_iscontrol', string='controle')
-    is_correction = fields.Boolean(compute='_iscorr', string='correction')
-    line_ids = fields.One2many('project.task.work.line', 'work_id', string='Work done')
-    progress_me = fields.Float(compute='_get_progress', string='Company Currency')
+    affect_emp_list = fields.Char(string='N.U - employée id')
+    affect_e_l = fields.Char(string='N.U - employée id')
+    affect_emp = fields.Char(string='N.U - employée')
+    affect_con = fields.Char(string='N.U - controle')
+    affect_cor = fields.Char(string='N.U - corrdinateur')
+    affect_con_list = fields.Char(string='N.U - controle id')
+    affect_cor_list = fields.Char(string='N.U - corrdinateur id')
+    is_intervenant = fields.Boolean(compute='_isinter', string='intervenant ?')
+    is_control = fields.Boolean(compute='_iscontrol', string='controle ?')
+    is_correction = fields.Boolean(compute='_iscorr', string='correction ?')
+    line_ids = fields.One2many('project.task.work.line', 'work_id', string='N.U')
+    progress_me = fields.Float(compute='_get_progress', string='N.U')
     progress_qty = fields.Float(compute='_get_progress_qty', string='% Qté')
     progress_amount = fields.Float(compute='_get_progress_amount', string='% Montant')
-    risk = fields.Char(compute='_get_risk', string='Risk')
-    link_ids = fields.One2many('link.line', 'work_id', string='Work done')
-    r_id = fields.Many2one('risk.management.category', string='r ID', readonly=True,
+    risk = fields.Char(compute='_get_risk', string='N.U')
+    link_ids = fields.One2many('link.line', 'work_id', string='N.U')
+    r_id = fields.Many2one('risk.management.category', string='N.U', readonly=True,
                            states={'draft': [('readonly', False)]}, )
-    dep = fields.Char(string='dep', )
+    dep = fields.Char(string='N.U', )
     employee_ids_production = fields.Many2many('hr.employee', 'project_task_work_employee_production_rel',
                                                string='Employés assignés production')
     employee_ids_controle = fields.Many2many('hr.employee', 'project_task_work_employee_controle_rel',
                                              string='Employés assignés contrôle')
     employee_ids_correction = fields.Many2many('hr.employee', 'project_task_work_employee_correction_rel',
                                                string='Employés assignés correction')
-
     employee_ids = fields.Many2many('res.users', string='Employés assignés')
-    step_id = fields.Many2one('product.step', string='Etape')
-    nature_tache = fields.Char(string='nature de tache')
+    permis_str = fields.Char('N.U', default='Permis')
 
-    # @api.depends('product_id.name')
-    # def _compute_nature_tache(self):
-    #     print('_compute_nature_tache')
-    #     for rec in self:
-    #         if 'correction' in rec.product_id.name:
-    #             self.write({'nature_tache':'correction'})
-    #             print('rec.product_id.name :', rec.product_id.name)
-    #             print('_compute_nature_tache :', rec.nature_tache)
-    #         elif u'Contrôle' in rec.product_id.name:
-    #             self.nature_tache = 'Contrôle'
-    #             self.write({'nature_tache': 'Contrôle'})
-    #             print('rec.product_id.name :',rec.product_id.name)
-    #             print('_compute_nature_tache :', rec.nature_tache)
-    #         else:
-    #             self.nature_tache = 'prod'
-    #             self.write({'nature_tache': 'prod'})
-    #
-    #             print('rec.product_id.name :', rec.product_id.name)
-    #             print('_compute_nature_tache :', rec.nature_tache)
+    # webgantt
+    # planned_date_begin = fields.Datetime(string='Planned start', index=True, tracking=True, copy=False,
+    #                                      task_dependency_tracking=True)
+    # planned_date_end = fields.Datetime(string='Planned stop', index=True, tracking=True, copy=False,
+    #                                    task_dependency_tracking=True)
+    # task_type = fields.Selection([
+    #     ('task', 'Task'),
+    #     ('milestone', 'Milestone')
+    # ], string="Task Type", required=True, default='task')
+    # color_g = fields.Integer('Project color', default=4)
+    # task_link_ids = fields.One2many('project.task.work.link', 'source_id', string="Task Links")
+    # task_priority = fields.Selection([
+    #     ('normal', 'Normal'),
+    #     ('low', 'Low'),
+    #     ('high', 'High')
+    # ], string='Priority', required=True, default='normal')
+    # progress = fields.Integer(tracking=True)
 
-    # employee_image_128 = fields.Binary("Employee Image 1920", compute='_compute_employee_image_1920', store=False)
-    #
-    # @api.depends('employee_ids.image_1920')
-    # def _compute_employee_image_1920(self):
-    #     for task_work in self:
-    #         employee_images = task_work.employee_ids.mapped('image_1920')
-    #         task_work.employee_image_128 = employee_images and employee_images[0] or False
+    @api.onchange('planned_date_end')
+    def onchange_gantt_stop_date(self):
+        if self.planned_date_begin and self.planned_date_end and self.planned_date_end < self.planned_date_begin:
+            self.planned_date_end = self.planned_date_begin
 
-    # @api.model
-    # def default_get(self, fields_list):
-    #     res = super().default_get(fields_list)
-    #     print('res :', res)
+    @api.onchange('task_type', 'planned_date_begin')
+    def onchange_task_type(self):
+        if self.planned_date_begin and self.task_type == 'milestone':
+            self.planned_date_end = self.planned_date_begin + timedelta(hours=1)
 
-    def start_work(self):
-        self.state_prod = 'started'
+    @api.model
+    def search_read_links(self, domain=None):
+        datas = []
+        tasks = self.env['project.task.work'].search(domain)
+        for task in tasks:
+            if task.task_link_ids:
+                for link in task.task_link_ids:
+                    link_vals = {
+                        'id': link.id,
+                        'source': task.id,
+                        'target': link.target_id.id,
+                        'type': link.link_type,
+                    }
+                    datas.append(link_vals)
+        return datas
 
     def _default_done(self):
 
@@ -505,13 +509,11 @@ class TaskWork(models.Model):
                 book.done33 = False
 
     def _isinter(self):
-        print('_isinter ')
+        ## print('_isinter ')
         # print('self.employee_ids: ', self.employee_ids.image_1920)
         # print('self.employee_ids: ', self.employee_ids.image_128)
-        for rec in self:
-            rec.is_intervenant = True
-            print('product_id :', rec.product_id)
-            print('product_id.name :', rec.product_id.name)
+        for book in self:
+            book.is_intervenant = True
 
             # if book.line_ids:
             #     tt = []
@@ -531,33 +533,7 @@ class TaskWork(models.Model):
             #         if test:
             #             book.is_intervenant = True
 
-    def view_product(self):
-        print('butt_info')
-        tt = []
-        print('')
-        wrk = self.env['project.task.work'].search([('work_group_id', '=', self.work_group_id),
-                                                    ('kit_id', '=', self.kit_id.id)])
-
-        for work in wrk:
-            print('work:', work)
-            tt.append(work.id)
-        print('tt :', tt)
-
-        view_id = self.env.ref('task_work.view_liste_task_work').id
-
-        return {
-            'name': 'Liste des tâches',
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'tree,form',
-            'target': 'new',
-            'res_model': 'project.task.work',
-            'context': {},
-            'views': [(view_id, 'tree')],
-            'view_id': view_id,
-            'domain': [('id', 'in', tt)],
-        }
-
+    #
     def _iscontrol(self):
         print('_iscontrol ')
         for book in self:
@@ -691,37 +667,40 @@ class TaskWork(models.Model):
 
             rec.risk = ratio
 
-    def action_affect(self, type_affect):
-        print('type_affect:', type_affect)
+    def action_affect(self):
 
-        return {
-            'name': 'Modification Travaux Permis',
-            'type': 'ir.actions.act_window',
-            'view_type': 'form',
-            'view_mode': 'form',
-            'target': 'new',
-            'res_model': 'base.invoices.merge.automatic.wizard',
-            'view_id': self.env.ref('eb_invoices_wizard.view_merge_tasks_form').id,
-            'context': {'active_ids': self.ids,
-                        'active_model': self._name,
-                        'types_affect': type_affect,
-                        },
-            'domain': []
-        }
+        if len(self.ids) > 1:
+            return {
+                'name': 'Modification Travaux Permis',
+                'type': 'ir.actions.act_window',
+                'view_type': 'form',
+                'view_mode': 'form',
+                'target': 'new',
+                'res_model': 'base.invoices.merge.automatic.wizard',
+                'view_id': self.env.ref('eb_invoices_wizard.view_merge_tasks_multi_form').id,
+                'context': {'active_ids': self.ids,
+                            'active_model': self._name,
+                            'types_affect': 'intervenant'},
+            }
 
-    def action_affect_production(self):
-        return self.action_affect('intervenant')
-
-    def action_affect_controle(self):
-        return self.action_affect('controle')
-
-    def action_affect_correction(self):
-        return self.action_affect('correction')
+        else:
+            return {
+                'name': 'Modification Travaux Permis',
+                'type': 'ir.actions.act_window',
+                'view_type': 'form',
+                'view_mode': 'form',
+                'target': 'new',
+                'res_model': 'base.invoices.merge.automatic.wizard',
+                'view_id': self.env.ref('eb_invoices_wizard.view_merge_tasks_form').id,
+                'context': {'active_ids': self.ids,
+                            'active_model': self._name,
+                            'types_affect': 'intervenant'},
+            }
 
     def action_permis(self):
 
         return {
-            'name': 'Modification Travaux Permis',
+            'name': ('Modification Travaux Permis'),
             'type': 'ir.actions.act_window',
             'view_type': 'form',
             'view_mode': 'form',
@@ -733,25 +712,10 @@ class TaskWork(models.Model):
             'domain': []
         }
 
-    # def view_product(self):
-    #
-    #     return {
-    #         'name': 'Consulter Liste des Services',
-    #         'type': 'ir.actions.act_window',
-    #         'view_type': 'form',
-    #         'view_mode': 'form',
-    #         'target': 'new',
-    #         'res_model': 'product.kit',
-    #         'view_id': self.env.ref('product_custom.view_kit_form_popup').id,
-    #         'res_id': self.kit_id.id,
-    #         'context': {},
-    #         'domain': []
-    #     }
-
     def action_duplicate(self):
 
         return {
-            'name': 'Modification Travaux Permis',
+            'name': ('Modification Travaux Permis'),
             'type': 'ir.actions.act_window',
             'view_type': 'form',
             'view_mode': 'form',
@@ -766,7 +730,7 @@ class TaskWork(models.Model):
     def action_change_status(self):
 
         return {
-            'name': 'Modification Travaux Permis',
+            'name': ('Modification Travaux Permis'),
             'type': 'ir.actions.act_window',
             'view_type': 'form',
             'view_mode': 'form',
@@ -781,7 +745,7 @@ class TaskWork(models.Model):
     def action_change_visibility(self):
 
         return {
-            'name': 'Modification Travaux Permis',
+            'name': ('Modification Travaux Permis'),
             'type': 'ir.actions.act_window',
             'view_type': 'form',
             'view_mode': 'form',
@@ -926,12 +890,13 @@ class TaskWork(models.Model):
                         ll.append(hist_line.work_histo_id.id)
 
             if not ll:
-                raise UserError("Pas d'historique pour cette tâche")
+                raise UserError(_("Pas d'historique pour cette tâche"))
 
             return {
                 'name': 'Historique Tache',
                 'type': 'ir.actions.act_window',
                 'view_mode': 'form',
+                'target': 'new',
                 'res_model': 'work.histo',
                 'res_id': ll[0],
                 'context': {},
@@ -944,13 +909,14 @@ class TaskWork(models.Model):
                     'name': 'Historique Tache',
                     'type': 'ir.actions.act_window',
                     'view_mode': 'form',
+                    'target': 'new',
                     'res_model': 'work.histo',
                     'res_id': hist.id,
                     'context': {},
                     'domain': [('work_id', 'in', this.id)]
                 }
             else:
-                raise UserError("Pas d'historique pour cette tâche")
+                raise UserError(_("Pas d'historique pour cette tâche"))
 
     def action_open_task(self):
 
@@ -960,7 +926,7 @@ class TaskWork(models.Model):
         dep = self.env['hr.academic'].search([('categ_id', '=', self.categ_id.id)])
         self.env['hr.employee'].search([]).write({'vehicle': ''})
         if dep:
-            for nn in dep:
+            for nn in dep.ids:
                 em = self.env['hr.academic'].browse(nn).employee_id.id
                 emp_obj.browse(em).write({'vehicle': '1'})
                 r.append(em)
@@ -1274,45 +1240,18 @@ class TaskWork(models.Model):
 
     @api.model
     def create(self, values):
-
-        active_ids = self.env.context.get('active_ids')
-        active_model = self.env.context.get('active_model')
-        affect_multiple = self.env['settings.custom'].search([('affectation_multiple', '=', 0)], limit=1)
-
-        if active_ids and active_ids == 'project.task.work' and affect_multiple:
-            return self.browse(active_ids)[0]
-        if active_ids and active_model == 'project.task.work' and not affect_multiple:
-            if 'create_explicitly' in values:
-                del values['create_explicitly']
-                print('values :', values)
-                return super(TaskWork, self).create(values)
-            else:
-                return self.browse(self.env.context['active_ids'])[0]
+        if 'active_ids' in self.env.context and self.env.context.get('active_model') == 'project.task.work':
+            # If the context contains active_ids and active_model is 'project.task.work',
+            # it means the wizard is being called from the 'project.task.work' model
+            return self.browse(self.env.context['active_ids'])[0]
         else:
             return super(TaskWork, self).create(values)
 
     def lister_intervenant(self):
-        print('lister_intervenant')
         tt = []
-        # group_id2.ids instead
         if self.ids:
-            print('line_ids 2', self.ids)
             for rec_line in self.ids:
                 tt.append(rec_line)
-
-        print('tt :', tt)
-        # if rec_line.group_id2:
-        #     if rec_line.group_id2.id not in tt:
-        #         tt.append(rec_line.group_id2.id)
-        # if tt:
-        #     for kk in tt:
-        #         self.env['base.group.merge.automatic.wizard'].search([('id', '=', kk)]).write(
-        #             {'create_uid': self.env.uid})
-        # self.env['base.group.merge.automatic.wizard'].search([('id', 'in', kk)]).write({'create_uid': self.env.uid}) #correct
-        # correct
-        # if tt:
-        #     self.env['base.group.merge.automatic.wizard'].search([('id', '=', kk)]).write(
-        #         {'create_uid': self.env.uid})
 
         view_id = self.env.ref('task_work.view_employes_intervenant').id
 
@@ -1341,8 +1280,8 @@ class TaskWorkLine(models.Model):
         for record in self:
             record.is_super_admin = self.env.user.has_group('project_custom.group_super_admin')
 
-    is_super_admin = fields.Boolean(string='Super Admin', compute='_compute_is_super_admin', method=True)
-    name = fields.Char(string='Work summary', readonly=True, states={'affect': [('readonly', False)]}, )
+    is_super_admin = fields.Boolean(string='N.U - Super Admin ?', compute='_compute_is_super_admin', method=True)
+    name = fields.Char(string='Libellé Travaux', readonly=True, states={'affect': [('readonly', False)]}, )
     ftp = fields.Char(string='ftp', )
     date = fields.Datetime(string='Date', select="1")
     date_r = fields.Datetime(string='Date', select="1", readonly=True, states={'affect': [('readonly', False)]}, )
@@ -1353,10 +1292,10 @@ class TaskWorkLine(models.Model):
     date_start_r = fields.Date(string='Date', select="1", readonly=True, states={'affect': [('readonly', False)]}, )
     date_end_r = fields.Date(string='Date', select="1", readonly=True, states={'affect': [('readonly', False)]}, )
     employee_id = fields.Many2one('hr.employee', string='Employee')
-    project_id = fields.Many2one('project.project', 'Project', ondelete='set null', select=True,
+    project_id = fields.Many2one('project.project', 'Projet', ondelete='set null', select=True,
                                  track_visibility='onchange', change_default=True,
                                  readonly=True, states={'affect': [('readonly', False)]}, )
-    task_id = fields.Many2one('project.task', string='Task', ondelete='cascade', select="1", readonly=True,
+    task_id = fields.Many2one('project.task', string='Tache', ondelete='cascade', select="1", readonly=True,
                               states={'affect': [('readonly', False)]}, )
     product_id = fields.Many2one('product.product', string='Task', ondelete='cascade', select="1", readonly=True,
                                  states={'affect': [('readonly', False)]}, )
@@ -1372,10 +1311,10 @@ class TaskWorkLine(models.Model):
         ('total', 'Total'),
     ],
         string='Status', copy=False, readonly=True, states={'affect': [('readonly', False)]}, )
-    etape = fields.Char('etap', readonly=True, states={'draft': [('readonly', False)]}, )
+    etape = fields.Char('N.U - Etape', readonly=True, states={'draft': [('readonly', False)]}, )
     sequence = fields.Integer(string='Sequence', select=True, readonly=True, states={'affect': [('readonly', False)]}, )
-    zone = fields.Integer(string='Color Index', readonly=True, states={'affect': [('readonly', False)]}, )
-    secteur = fields.Integer(string='Color Index', readonly=True, states={'affect': [('readonly', False)]}, )
+    zone = fields.Integer(string='N.U - Zone', readonly=True, states={'affect': [('readonly', False)]}, )
+    secteur = fields.Integer(string='N.U - Secteur', readonly=True, states={'affect': [('readonly', False)]}, )
     user_id = fields.Many2one('res.users', string='USER', select="1",
                               readonly=True, states={'affect': [('readonly', False)]}, )
     paylist_id = fields.Many2one('hr.payslip', string='Done by', select="1", readonly=True,
@@ -1421,7 +1360,6 @@ class TaskWorkLine(models.Model):
     total = fields.Integer(string='Total')
     rentability = fields.Float(string='Rentabilité')
     taux_horaire = fields.Float(string='T.H')
-    step_id = fields.Many2one('product.step', string='Etape')
 
     def action_create_facture(self):
 
@@ -1633,3 +1571,17 @@ class HrPayslip(models.Model):
 class ProjectIssue(models.Model):
     _name = "project.issue"
     name = fields.Char('Name')
+
+
+class ProjectTaskWorkLink(models.Model):
+    _name = "project.task.work.link"
+    _description = "Project Task Work Links"
+
+    source_id = fields.Many2one('project.task.work', string='Task')
+    target_id = fields.Many2one('project.task.work', string='Target Task', required=True)
+    link_type = fields.Selection([
+        ('0', "Finish to Start"),
+        ('1', "Start to Start"),
+        ('2', "Finish to Finish"),
+        ('3', "Start to Finish")
+    ], string="Link Type", required=True, default='1')

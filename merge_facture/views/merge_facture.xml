@@ -4,7 +4,7 @@
         <field name="name">merge.facture.tree</field>
         <field name="model">base.facture.wizard</field>
         <field name="arch" type="xml">
-            <tree default_order='date_inv desc' decoration-danger="state == 'draft'"
+            <tree default_order='date_inv desc' decoration-info="state == 'draft'"
                   decoration-success="state == 'open'">
                 <field name="num" readonly="1" string="Numéro"/>
                 <field name="date_inv" readonly="1" string="Date"/>
@@ -62,11 +62,14 @@
                 <notebook string="Paramètres">
                     <page string="Taches Concernés">
                         <group string="Afficher Taches Concernés">
+                            <button name="get_work_line" string="Charger" type="object"
+                                    class="oe_highlight"/>
+                            <newline/>
                             <field name="work_ids"
                                    options="{'no_create': True, 'no_create_edit':True,'no_open':True}" nolabel="1"
-                                   context="{'active_test':False}" editable="bottom" readonly="1">
+                                   context="{'active_test':False}">
                                 <tree colors="blue:state== 'affect';black:state== 'tovalid';red:state== 'cancel';purple:state== 'valid'"
-                                      readonly="1" create="false" edit="false" editable="bottom">
+                                      create="false" edit="false">
                                     <field name="work_id" invisible="1"/>
                                     <field name="project_id"/>
                                     <field name="categ_id" string="département"/>
@@ -178,6 +181,19 @@
                     </page>
                 </notebook>
             </form>
+        </field>
+    </record>
+
+    <record id="view_merge_facture_search" model="ir.ui.view">
+        <field name="name">merge.facture.search</field>
+        <field name="model">base.facture.wizard</field>
+        <field name="arch" type="xml">
+            <search>
+                <searchpanel view_types="tree">
+                    <field name="partner_id" icon="fa-user" enable_counters="1" hierarchize="1"/>
+                    <field name="state" icon="fa-play" enable_counters="1"/>
+                </searchpanel>
+            </search>
         </field>
     </record>
 

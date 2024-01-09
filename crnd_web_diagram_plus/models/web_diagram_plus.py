@@ -9,7 +9,8 @@ class WebDiagramPlus(models.Model):
     _description = 'Web Diagram Plus'
 
     name = fields.Char(required=True)
-    project_ids = fields.One2many('project.project', 'web_diagram_id', string='project')
+    # project_ids = fields.One2many('project.project', 'web_diagram_id', string='project')
+    project_id = fields.Many2one('project.project', string='Project')
     node_ids = fields.One2many(
         'web.diagram.plus.node', 'web_diagram_id', string='Nodes', copy=True)
     arrow_ids = fields.One2many(
@@ -25,6 +26,7 @@ class WebDiagramPlus(models.Model):
 
     @api.depends('node_ids')
     def _compute_node_count(self):
+        # Calcul du nombre de nodes pour chaque diagramme
         for diagram in self:
             diagram.node_count = len(diagram.node_ids)
 
@@ -37,6 +39,7 @@ class WebDiagramPlus(models.Model):
 
     @api.depends('arrow_ids')
     def _compute_arrow_count(self):
+        # Calcul du nombre d'arrows pour chaque diagramme
         for row in self:
             sorted_arrows = sorted(row.arrow_ids, key=lambda x: x.id)
             row.arrow_count = len(sorted_arrows)
@@ -45,6 +48,7 @@ class WebDiagramPlus(models.Model):
 
     @api.model
     def get_action_by_xmlid(self, xmlid, context=None, domain=None):
+        # Récupération d'une action Odoo à partir d'un identifiant XML
         action = self.env.ref(xmlid)
         assert isinstance(  # nosec
             self.env[action._name], type(self.env['ir.actions.actions']))
@@ -57,6 +61,8 @@ class WebDiagramPlus(models.Model):
         return action
 
     def action_web_diagram_plus(self):
+        # Action déclenchée lors du clic sur "View Diagram"
+
         self.ensure_one()
         action = self.get_action_by_xmlid(
             'crnd_web_diagram_plus.action_web_diagram_plus_model',
@@ -71,6 +77,7 @@ class WebDiagramPlus(models.Model):
 
     @api.model
     def update_arrow_count(self, arrow_ids):
+        # Mise à jour du compteur d'arrows pour plusieurs lignes
         row_ids = arrow_ids.mapped('web_diagram_id')
         for row in row_ids:
             row._compute_arrow_count()
@@ -80,23 +87,23 @@ class WebDiagramPlusNode(models.Model):
     _name = 'web.diagram.plus.node'
     _description = 'Web Diagram Plus Node'
 
-    name = fields.Char(string='Name', related='categ.complete_name', equired=True)
+    name = fields.Char(string='Name',  equired=True)
     categ = fields.Many2one('product.category', required=True, string='Département')
 
     web_diagram_id = fields.Many2one(
         'web.diagram.plus', 'Project Diagram', ondelete='cascade',
         required=True, index=True)
-
+    # Champs pour les couleurs de fond et d'étiquette, avec des valeurs par défaut
     res_bg_color = fields.Char(
         default=DEFAULT_BG_COLOR, string="Backgroung Color")
     res_label_color = fields.Char(
         default=DEFAULT_LABEL_COLOR)
-
+    # Relations avec les arrows entrantes et sortantes
     arrow_in_ids = fields.One2many(
         'web.diagram.plus.arrow', 'to_node_id', 'Incoming Arrows')
     arrow_out_ids = fields.One2many(
         'web.diagram.plus.arrow', 'from_node_id', 'Outgoing Arrows')
-
+    # Champ pour la position du diagramme (texte)
     diagram_position = fields.Text()
 
     node_count = fields.Integer(
@@ -115,7 +122,8 @@ class WebDiagramPlusArrow(models.Model):
     _name = 'web.diagram.plus.arrow'
     _description = 'Web Diagram Plus Arrow'
 
-    name = fields.Many2one('base.flow.merge.automatic.wizard', required=True, string='Action')
+    name = fields.Char(string='Action', required=True)
+    # name = fields.Many2one('base.flow.merge.automatic.wizard', required=True, string='Action')
     actions = fields.Selection([('keep', 'Laisser Les Taches Actives (Pas de changement de statut)'),
                                 ('permis',
                                  'Terminer Les Taches(Retire les taches du tableau de bord mais reste affichable après recherche)'),
@@ -124,7 +132,8 @@ class WebDiagramPlusArrow(models.Model):
                                 ('suspend', 'Suspendre Temporairement Les Taches Encours'),
                                 ('treated', 'Cloturer Définitivement Les Taches Encours'),
 
-                                ], readonly=True, related="name.actions")
+                                ], readonly=True)
+    # , related = "name.actions"
 
     workflow_action_id = fields.Char(
         string='Workflow Action ID',
@@ -196,13 +205,26 @@ class WebDiagramPlusArrow(models.Model):
         super(WebDiagramPlusArrow, self).unlink()
         self.env['web.diagram.plus'].update_arrow_count(row_ids)
 
+    # @api.depends('name')
+    # def _compute_workflow_action_id(self):
+    #     # Mettez ici la logique pour calculer l'ID de l'action du flux de travail
+    #     # en fonction du champ 'name' ou d'autres champs pertinents.
+    #     for arrow in self:
+    #         # Exemple de calcul basique : utiliser le nom comme ID
+    #         arrow.workflow_action_id = arrow.name.name if arrow.name else ''
+
     @api.depends('name')
     def _compute_workflow_action_id(self):
         # Mettez ici la logique pour calculer l'ID de l'action du flux de travail
         # en fonction du champ 'name' ou d'autres champs pertinents.
         for arrow in self:
-            # Exemple de calcul basique : utiliser le nom comme ID
-            arrow.workflow_action_id = arrow.name.name if arrow.name else ''
+            # Vérifiez si 'name' est une chaîne
+            if isinstance(arrow.name, str):
+                # Si 'name' est une chaîne, attribuez-le directement à l'ID de l'action du flux de travail
+                arrow.workflow_action_id = arrow.name if arrow.name else ''
+            else:
+                # Si 'name' est un objet, utilisez un attribut spécifique comme 'name'
+                arrow.workflow_action_id = arrow.name.name if arrow.name else ''
 
     @api.depends('created_by')
     def _compute_workflow_name_id(self):

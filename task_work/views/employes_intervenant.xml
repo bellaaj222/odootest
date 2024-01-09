@@ -22,8 +22,8 @@
         <field name="model">intervenants.affect</field>
         <field name="arch" type="xml">
             <tree string="Groups" create="false" edit="false" delete="false"
-            decoration-success="state =='termine'" decoration-info="state =='actif'"
-                  decoration-warning="state =='en_cours'">
+                  decoration-success="state =='termine'" decoration-info="state =='actif'"
+                  decoration-warning="state =='en_cours'" decoration-danger="state == 'cancelled'">
 
                 <!--                <field name="name" string="Name employe"/>-->
                 <field name="employee_id" string="Name employe" widget="many2one_avatar_employee"/>
@@ -31,13 +31,14 @@
                        decoration-success="state =='termine'"
                        decoration-info="state =='actif'"
                        decoration-warning="state =='en_cours'"
+                       decoration-danger="state =='cancelled'"
                        widget="badge"/>
                 <field name="date_affectation" string="Date Affectation"/>
                 <field name="date_declaration_bon" string="Date declaration de bon"/>
                 <field name="task_work_id" string="Id Tâche"/>
+                <button name="button_cancel" string="Annuler" help="Annuler l'affecation" type="object"
+                        icon="fa-times" attrs="{'invisible': [('state', '!=', 'actif')]}"/>
             </tree>
-
-
         </field>
     </record>
 
