@@ -1,0 +1,92 @@
+<odoo>
+    <data>
+        <record id="view_hours_injection_form" model="ir.ui.view">
+            <field name="name">hours.injection.form</field>
+            <field name="model">hours.injection</field>
+            <field name="arch" type="xml">
+                <form>
+                    <header>
+                        <button name="send" string="Confirmer" states="draft" type="object"
+                                confirm="Valider le Traitement?" class="oe_highlight"/>
+                        <button name="cancel" string="Annuler" states="valid" type="object"
+                                confirm="Annuler le Traitement?" class="oe_highlight"/>
+                        <field name="state" widget="statusbar" statusbar_visible="draft,valid"/>
+                    </header>
+                    <sheet>
+                        <group string="Données">
+                            <group>
+                                <field name="date" readonly="1"/>
+                                <field name="gest_id" readonly="1"/>
+                                <field name="sum" readonly="1" widget="float_time"/>
+                            </group>
+                            <group>
+                                <field name="bon_id" readonly="1"/>
+                                <field name="employee_id" readonly="1"/>
+                            </group>
+                        </group>
+                        <group string="Solde">
+                            <group>
+                                <field name="sol_cong" string="Solde Congé Ordinaire (en Jrs)" readonly="1"/>
+                                <field name="sol_bank" readonly="1"/>
+                            </group>
+                        </group>
+                        <group string="Traitement">
+                            <group>
+                                <field name="choice"/>
+                                <field name="hr_total" widget="float_time"
+                                       attrs="{'required': [('choice','=',('both'))], 'invisible': [('choice','!=','both')]}"/>
+                            </group>
+                            <group>
+                                <field name="hr_cong"
+                                       attrs="{'invisible': [('choice','=','bank')], 'required': [('choice', 'in', ('cong','both'))]}"/>
+                                <field name="hr_bank" widget="float_time"
+                                       attrs="{'invisible': [('choice','=','cong')], 'required': [('choice','in',('bank','both'))]}"/>
+
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="view_hours_injection_tree" model="ir.ui.view">
+            <field name="name">hours.injection.tree</field>
+            <field name="model">hours.injection</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="display_name" string="Réf"/>
+                    <field name="gest_id"/>
+                    <field name="choice"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_hours_injection_search" model="ir.ui.view">
+            <field name="name">hours.injection.search</field>
+            <field name="model">hours.injection</field>
+            <field name="arch" type="xml">
+                <search>
+                    <field name="employee_id"/>
+                    <filter name="filter_cancelled" string="Brouillon" domain="[('state','=','draft')]"/>
+                    <filter name="filter_valid" string="Confirmé" domain="[('state','=','valid')]"/>
+                    <group expand="0" string="Group By">
+                        <filter name="group_by_employee" string="Bénéficiaire" context="{'group_by':'employee_id'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <record id="action_hours_injection" model="ir.actions.act_window">
+            <field name="name">Traitement d'heures</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">hours.injection</field>
+            <field name="view_mode">tree,form</field>
+            <field name="context">{}</field>
+        </record>
+
+        <menuitem id="menu_hours_injection" name="Traitement d'heures" parent="project_custom.menu_rh" sequence="30"
+                  action="action_hours_injection"/>
+
+    </data>
+</odoo>

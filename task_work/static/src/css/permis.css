@@ -1,0 +1,9 @@
+.oe_kanban_permis {
+    background-color: #CB8ACF; /* Change the background color as desired */
+    color: #373232; /* Text color */
+    border-radius: 5px; /* Rounded corners */
+    padding: 2px 5px; /* Adjust padding for spacing */
+    display: inline-block; /* Inline-block to fit content */
+    font-size: 14px; /* Adjust the font size to make it smaller */
+    max-width: fit-content; /* Set the maximum width to fit content */
+}

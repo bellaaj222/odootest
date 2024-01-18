@@ -1,0 +1,43 @@
+<odoo>
+    <record id="view_show_line2_tree" model="ir.ui.view">
+        <field name="name">show.line2.tree</field>
+        <field name="model">bon.show.line2</field>
+        <field name="arch" type="xml">
+            <tree string="Groups" create="0">
+                <field name="bon_id" string="Facture/F.T"/>
+                <field name="project_id" string="Projet"
+                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                <field name="partner_id" string="Client" domain="[('customer', '=', True)]"
+                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                <field name="product_id" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                       on_change="onchange_product_id(product_id)" string="Type de Service"/>
+                <field name="work_id" string="Travaux" readonly="1"
+                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}" invisible="1"/>
+                <field name="done" string="min_id" invisible="1"/>
+                <field name="zone" string="Zone" invisible="0"/>
+                <field name="secteur" string="Secteur" invisible="0"/>
+                <field name="employee_id" string="Intervenant"/>
+                <field name="date_start_r" string="Date Début" widget="date"
+                       on_change="onchange_date_to_(date_end_r,date_start_r,employee_id)"/>
+                <field name="date_end_r" string="Date Fin" widget="date"
+                       on_change="onchange_date_to_(date_end_r,date_start_r,employee_id)" invisible="1"/>
+                <field name="categ_id" invisible="1"/>
+                <field name="uom_id" invisible="1"/>
+                <field name="name" string="Notes"/>
+                <field name="color1" string="Durée(Jours)" sum="Prev Hours" invisible="1"/>
+                <field name="hours_r" string="Durée(Heurs)" widget="char" sum="Prev Hours"/>
+                <field name="poteau_r" string="Qté/Unité" sum="Prev Hours" widget="char"/>
+                <field name="uom_id_r" string="Unité"
+                       options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                <field name="wage" string="T.H"/>
+                <field name="amount_line" string="Total" sum="Prev Hours" readonly="0"/>
+                <field name="state" string="Statut"/>
+                <field name="send" string="Notes" invisible="1"/>
+<!--                <button name="" string="Bons Validés" type="object" icon="STOCK_APPLY"-->
+<!--                        attrs="{'invisible': [('send','=', False)]}" readonly="1"/>-->
+                <field name="work_id" string="line" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+</odoo>

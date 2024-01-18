@@ -1,0 +1,18 @@
+<odoo>
+
+    <record id="view_work_line_bon_ref" model="ir.ui.view">
+        <field name="name">work.line.bon.ref</field>
+        <field name="model">project.task.work.line</field>
+        <field name="inherit_id" ref="task_work.view_work_line_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='work_id']" position="after">
+                <field name="group_id2" string="Référence Bon"/>
+            </xpath>
+<!--            <xpath expr="//field[@name='done1']" position="after">-->
+<!--                <button name="action_open_group" string="Consulter Bon" type="object"-->
+<!--                        icon="terp-stock_effects-object-colorize" attrs="{'invisible': [('group_id2','=', False)]}"/>-->
+<!--            </xpath>-->
+        </field>
+    </record>
+
+</odoo>

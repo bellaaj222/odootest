@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<!--    <record model="ir.ui.view" id="view_project_form_inherit">-->
+<!--        <field name="name">project.task.form.inherit</field>-->
+<!--        <field name="model">project.task</field>-->
+<!--        <field name="inherit_id" ref="project.view_task_form2"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <xpath expr="//field[@name='tag_ids']" position="after">-->
+<!--                <tree>-->
+<!--                    <field name="name"/>-->
+<!--                    <field name="web_diagram_id"/>-->
+<!--                    <field name="from_node_id"/>-->
+<!--                    <field name="to_node_id"/>-->
+<!--                </tree>-->
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
+</odoo>

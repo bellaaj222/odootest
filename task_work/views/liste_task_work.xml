@@ -1,0 +1,70 @@
+<odoo>
+    <!--    <record id="view_liste_task_work_search" model="ir.ui.view">-->
+    <!--        <field name="name">task.work.search</field>-->
+    <!--        <field name="model">task.work</field>-->
+    <!--        <field name="arch" type="xml">-->
+    <!--            <search string="Action">-->
+    <!--                <field name="name" filter_domain="['|', ('name','ilike',self), ('type','ilike',self)]" string="Action"/>-->
+    <!--                <field name="state" string="Etat"/>-->
+    <!--                <filter name="production" string="Production" domain="[('types_affect', '=', 'intervenant')]"/>-->
+    <!--                <filter name="controle" string="Contrôle" domain="[('types_affect', '=', 'controle')]"/>-->
+    <!--                <filter name="correction" string="Correction" domain="[('types_affect', '=', 'correction')]"/>-->
+    <!--                <group expand="0" string="Group By">-->
+    <!--                    <filter string="Type d'affectation" name="types_affect" domain="[]"-->
+    <!--                            context="{'group_by':'types_affect'}"/>-->
+    <!--                </group>-->
+
+    <!--            </search>-->
+    <!--        </field>-->
+    <!--    </record>-->
+    <record id="view_liste_task_work" model="ir.ui.view">
+        <field name="name">task.work.tree</field>
+        <field name="model">project.task.work</field>
+        <field name="arch" type="xml">
+            <tree string="Groups" create="false" edit="false" delete="false"
+                  decoration-success="state =='termine'" decoration-info="state =='actif'"
+                  decoration-warning="state =='en_cours'">
+
+                <!--                <field name="name" string="Name employe"/>-->
+                <field name="sequence" string="Séq" readonly="1" invisible="1"/>
+                <field name="id" string="id" readonly="1"/>
+                <field name="pos" string="Pos" invisible="1"/>
+                <field name="pr_project_id" string="Parent PR" invisible="1"/>
+                <field name="categ_id" string="Département" readonly="1" invisible="1"/>
+                <field name="project_id" string="Projet" readonly="1" invisible="1"/>
+                <field name="task_id" string="Tache" invisible="1"/>
+                <field name="kit_id" string="Nom Kit" invisible="1"/>
+                <field name="product_id" string="Type de Service"/>
+                <field name="name" string="Libellé Travaux" readonly="1" invisible="1"/>
+
+
+                <field name="date_start" string="Date Déb." readonly="1"/>
+                <field name="date_end" string="Date Fin" readonly="1"/>
+                <field name="gest_id"
+                       string="Super" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                       readonly="1" invisible="1"/>
+                <field name="reviewer_id1"
+                       string="Super" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                       readonly="1" invisible="1"/>
+                <field name="gest_id3"
+                       string="Coord" options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                       readonly="1" invisible="1"/>
+                <field name="employee_id" string="Ressource affectée" invisible="1"/>
+
+
+                <field name="employee_id" string="Ressource affectée" invisible="1"/>
+                <field name="employee_ids_production" widget="many2many_avatar_employee"
+                       options="{'no_create': True}" domain="[('id', 'in', employee_ids_production)]"/>
+                <field name="employee_ids_controle" widget="many2many_avatar_employee"
+                       options="{'no_create': True}" domain="[('id', 'in', employee_ids_controle)]"/>
+                <field name="employee_ids_correction" widget="many2many_avatar_employee"
+                       options="{'no_create': True}" domain="[('id', 'in', employee_ids_correction)]"/>
+                <field name="state" string="Etat"/>
+            </tree>
+
+
+        </field>
+    </record>
+
+
+</odoo>

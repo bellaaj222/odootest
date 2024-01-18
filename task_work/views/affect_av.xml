@@ -1,0 +1,46 @@
+<odoo>
+
+    <record id="view_affect_av_task_work_form" model="ir.ui.view">
+        <field name="name">affect.av.task.work.form</field>
+        <field name="model">project.task.work</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group string="Données de Gestion">
+                        <group>
+                            <field name="gest_time" widget="float_time" required="1"/>
+                        </group>
+                    </group>
+                    <group string="Production">
+                        <group>
+                            <field name="date_start_prod_pr"/>
+                            <field name="employee_prod_pr" widget="many2one_avatar_employee"/>
+                        </group>
+                        <group>
+                            <field name="date_end_prod_pr"/>
+                        </group>
+                    </group>
+                    <group string="Contrôle">
+                        <group>
+                            <field name="date_start_cn_pr"/>
+                            <field name="employee_cn_pr" widget="many2one_avatar_employee"/>
+                        </group>
+                        <group>
+                            <field name="date_end_cn_pr"/>
+                        </group>
+                    </group>
+                    <group string="Correction">
+                        <group>
+                            <field name="date_start_corr_pr"/>
+                            <field name="employee_corr_pr" widget="many2one_avatar_employee"/>
+                        </group>
+                        <group>
+                            <field name="date_end_corr_pr"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+</odoo>

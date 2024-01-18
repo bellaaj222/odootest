@@ -1,0 +1,17 @@
+<odoo>
+
+    <record id="action_declarer_bons" model="ir.actions.server">
+        <field name="name">Déclarer Les Bons</field>
+        <field name="type">ir.actions.server</field>
+        <field name="model_id" ref="task_work.model_project_task_work"/>
+        <field name="binding_model_id" ref="task_work.model_project_task_work"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="sequence" eval="20"/>
+        <field name="code">
+            action = records.action_open1()
+        </field>
+    </record>
+
+</odoo>
+

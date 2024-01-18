@@ -1,0 +1,37 @@
+<odoo>
+
+    <!--    Mes F.T/Factures    -->
+
+    <record id="action_dash_ft" model="ir.actions.act_window">
+        <field name="name">Mes F.T/Factures</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">bon.show</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('bon_show.view_ft_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('bon_show.view_ft_form')})]"/>
+    </record>
+
+    <menuitem id="menu_dash_ft" name="Mes F.T/Factures" parent="project_custom.menu_dashboard" sequence="80"
+              action="action_dash_ft"/>
+
+    <!--    Factures/FT à valider    -->
+
+    <record id="action_dash_ft_to_valid" model="ir.actions.act_window">
+        <field name="name">Factures/FT à valider</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">bon.show</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('bon_show.view_ft_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('bon_show.view_ft_form')})]"/>
+    </record>
+
+    <menuitem id="menu_dash_ft_to_valid" name="Factures/FT à valider" parent="project_custom.menu_dashboard" sequence="90"
+              action="action_dash_ft_to_valid"/>
+
+</odoo>

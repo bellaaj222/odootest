@@ -1,0 +1,152 @@
+<odoo>
+
+    <record id="view_holidays_super_tree" model="ir.ui.view">
+        <field name="name">hr.holidays.super.tree</field>
+        <field name="model">hr.holidays</field>
+        <field name="arch" type="xml">
+            <tree decoration-info="state == 'pending'"
+                  decoration-primary="state != 'pending'"
+                  string="Allocation Requests" create="0">
+                <field name="date" string="Date"/>
+                <field name="type"/>
+                <field name="employee_id" string="Employé"/>
+                <field name="holiday_type_id" string="Type de Congé"/>
+                <field name="date_from" invisible="0" string="Date de Début"/>
+                <field name="date_to" invisible="0" string="Date de Fin"/>
+                <field name="number_of_days"/>
+                <field name="state" string="État"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_holidays_super_form" model="ir.ui.view">
+        <field name="name">hr.holidays.super.form</field>
+        <field name="model">hr.holidays</field>
+        <field name="arch" type="xml">
+            <form string="Leave Request" create="0" edit="0">
+                <header>
+                    <button name="button_accept" string="Accepter" type="object" class="oe_highlight"
+                            attrs="{'invisible': ['|', ('state','!=','pending'), ('type', '=', 'modify')]}"/>
+                    <button name="button_accept_r" string="Accepter" type="object" class="oe_highlight"
+                            attrs="{'invisible': ['|', ('state','!=','pending'), ('type', '=', 'take')]}"/>
+                    <button name="button_refuse" string="Refuser" type="object" class="oe_highlight"
+                            attrs="{'invisible': [('state','!=','pending')]}"/>
+
+                    <field name="state" widget="statusbar" statusbar_visible="draft,pending"/>
+                </header>
+                <sheet>
+                    <!--                    vue demande -->
+                    <group string="Données" attrs="{'invisible': [('type','=','modify')]}">
+                        <group>
+                            <field name="type" invisible="1"/>
+                            <field name="date" string="Date" readonly="1"/>
+                            <field name="employee_id"/>
+                            <field name="manager_id" domain="[('is_super','=',True)]"
+                                   options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                            <field name="holiday_type_id"
+                                   options="{'no_create': True, 'no_create_edit':True,'no_open':True}"/>
+                        </group>
+                        <group>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                            <field name="number_of_days" readonly="1" force_save="1"/>
+                        </group>
+                    </group>
+                    <group string="Justification" attrs="{'invisible': [('type','=','modify')]}">
+                        <field name="notes" nolabel="1" colspan="4" placeholder="Facultative"/>
+                    </group>
+                    <group string="Solde à La Demande" readonly="1" attrs="{'invisible': [('type','=','modify')]}">
+                        <field name="holiday_line_ids" nolabel="1"
+                               options="{'no_create': True, 'no_create_edit':True,'no_open':True}">
+                            <tree delete="false">
+                                <field name="name"/>
+                                <field name="max_leave"/>
+                                <field name="remaining_leave"/>
+                            </tree>
+                        </field>
+                    </group>
+                    <!--                    vue modification -->
+                    <group string="Ancien Congé" attrs="{'invisible': [('type','=','take')]}">
+                        <group>
+                            <field name="holiday_id" attrs="{'required': [('type','=','modify')]}"
+                                   domain="[('state', '=', 'accept'), ('holiday_id', '=', False)]"/>
+                        </group>
+                        <group>
+                            <field name="date" string="Date Modification" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Données Ancien Congé" attrs="{'invisible': [('type','=','take')]}">
+                        <group>
+                            <field name="type" invisible="1"/>
+                            <field name="employee_id"/>
+                            <field name="manager_id" domain="[('is_super','=',True)]"
+                                   options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                                   attrs="{'readonly': [('type','=','modify')]}" force_save="1"/>
+                            <field name="holiday_type_id"
+                                   options="{'no_create': True, 'no_create_edit':True,'no_open':True}"
+                                   attrs="{'readonly': [('type','=','modify')]}" force_save="1"/>
+                        </group>
+                        <group>
+                            <field name="date_from_r" string="Date de Début"
+                                   attrs="{'readonly': [('type','=','modify')]}" force_save="1"/>
+                            <field name="date_to_r" string="Date de Fin"
+                                   attrs="{'readonly': [('type','=','modify')]}" force_save="1"/>
+                            <field name="number_of_days_r" readonly="1" force_save="1" string="Nombre de Jours"
+                                   attrs="{'readonly': [('type','=','modify')]}"/>
+                        </group>
+                    </group>
+                    <group string="Données Nouveau Congé" attrs="{'invisible': [('type','=','take')]}">
+                        <group>
+                            <field name="date_from" string="Nouvelle Date de Début"/>
+                            <field name="date_to" string="Nouvelle Date de Fin"/>
+                            <field name="number_of_days" string="Nouveau Nombre de Jours"
+                                   readonly="1" force_save="1"/>
+                        </group>
+                    </group>
+                    <group string="Justification" attrs="{'invisible': [('type','=','take')]}">
+                        <field name="notes" nolabel="1" colspan="4" placeholder="Obligatoire"
+                               attrs="{'required': [('type','=','modify')]}"/>
+                    </group>
+                    <group string="Solde à La Modification" readonly="1" attrs="{'invisible': [('type','=','take')]}">
+                        <field name="holiday_line_ids" nolabel="1"
+                               options="{'no_create': True, 'no_create_edit':True,'no_open':True}">
+                            <tree delete="false">
+                                <field name="name"/>
+                                <field name="max_leave"/>
+                                <field name="remaining_leave"/>
+                            </tree>
+                        </field>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_holidays_super_calendar" model="ir.ui.view">
+        <field name="name">hr.holidays.super.calender</field>
+        <field name="model">hr.holidays</field>
+        <field name="arch" type="xml">
+            <calendar string="Congés" date_start="date_from" date_stop="date_to"
+                      mode="month" color="state" quick_add="False" event_open_popup="True">
+                <field name="state" filters="1"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="action_holidays_super" model="ir.actions.act_window">
+        <field name="name">Congés à Traiter</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">hr.holidays</field>
+        <field name="view_mode">tree,form,calendar</field>
+        <field name="context">{}</field>
+        <field name="domain">[('state', '!=', 'draft'), ('manager_id.user_id', '=', uid)]</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('hr_holiday_custom.view_holidays_super_tree')}),
+                (0, 0, {'view_mode': 'calendar', 'view_id': ref('hr_holiday_custom.view_holidays_super_calendar')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('hr_holiday_custom.view_holidays_super_form')})]"/>
+    </record>
+
+    <menuitem id="menu_holidays_super" name="Traitement Demande" parent="project_custom.menu_gest_cong" sequence="0"
+              action="action_holidays_super"/>
+
+</odoo>

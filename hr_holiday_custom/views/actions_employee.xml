@@ -1,0 +1,29 @@
+<odoo>
+
+    <record id="action_demande_employee" model="ir.actions.act_window">
+        <field name="name">Demande Congé</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">hr.holidays</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'default_type': 'take'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('hr_holiday_custom.view_holidays_employee_form')})]"/>
+    </record>
+
+    <menuitem id="menu_demande_employee" name="Demande Congé" parent="project_custom.menu_cong" sequence="0"
+              action="action_demande_employee"/>
+
+    <record id="action_modify_employee" model="ir.actions.act_window">
+        <field name="name">Modification Congé</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">hr.holidays</field>
+        <field name="view_mode">form</field>
+        <field name="context">{'default_type': 'modify'}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('hr_holiday_custom.view_holidays_employee_form')})]"/>
+    </record>
+
+    <menuitem id="menu_modify_employee" name="Modification Congé" parent="project_custom.menu_cong" sequence="10"
+              action="action_modify_employee"/>
+
+</odoo>

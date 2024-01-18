@@ -1,0 +1,29 @@
+<odoo>
+
+    <record id="view_convert_holiday_wizard" model="ir.ui.view">
+        <field name="name">hr.employee.convert.form</field>
+        <field name="model">hr.employee.convert.wizard</field>
+        <field name="arch" type="xml">
+            <form create="0">
+                <header>
+                    <button name="convert_to_holiday" type="object" string="Convertir"
+                            confirm="Confirmer la Conversion ?" class="oe_highlight"/>
+                </header>
+                <group string="Données">
+                    <group>
+                        <field name="employee_id" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="sol" readonly="1"/>
+                    </group>
+                </group>
+                <group string="Conversion">
+                    <group>
+                        <field name="hours" required="1"/>
+                    </group>
+                </group>
+            </form>
+        </field>
+    </record>
+
+</odoo>

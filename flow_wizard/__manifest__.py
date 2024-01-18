@@ -21,13 +21,13 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['base', 'project_custom', 'eb_invoices_wizard'],
+    'depends': ['base', 'project_custom','crnd_web_diagram_plus' , 'link_line'],
 
     # always loaded
     'data': [
         'security/ir.model.access.csv',
         'views/views.xml',
-        'views/taches_view.xml',
+        'views/button.xml',
         'views/inherit.xml',
     ],
     # only loaded in demonstration mode

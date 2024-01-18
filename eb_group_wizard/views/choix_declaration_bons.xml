@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<odoo>
+    <data>
+        <record model="ir.ui.view" id="choix_declaration_bons_form">
+            <field name="name">declaration.bons.form</field>
+            <field name="model">base.group.merge.automatic.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Merge Tasks">
+
+                    <header>
+                        <button name="button_choice" type="object" string="Ouvrir l'interface Déclaration"
+                                class="btn-primary"/>
+                        <field name="state2" widget="statusbar" statusbar_visible="draft,tovalid,valid"
+                               statusbar_colors="{'draft':'blue'}" invisible="1"/>
+                    </header>
+
+                    <group>
+                        <group string="Type de Bon à Déclarer">
+                            <field name="type1" string="Choix Type Bon" required="1"/>
+                        </group>
+                    </group>
+
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

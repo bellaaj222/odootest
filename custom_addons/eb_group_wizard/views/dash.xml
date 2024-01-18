@@ -1,0 +1,54 @@
+<odoo>
+
+    <!--    Bons Encours    -->
+
+    <record id="action_dash_bon" model="ir.actions.act_window">
+        <field name="name">Bons Encours</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">base.group.merge.automatic.wizard</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('eb_group_wizard.declaration_bons_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('eb_group_wizard.declaration_bons_form')})]"/>
+    </record>
+
+    <menuitem id="menu_dash_bon" name="Bons Encours" parent="project_custom.menu_dashboard" sequence="50"
+              action="action_dash_bon"/>
+
+    <!--    B. Cn. Encours    -->
+
+    <record id="action_dash_bon_cn" model="ir.actions.act_window">
+        <field name="name">B. Cn. Encours</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">base.group.merge.automatic.wizard</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('eb_group_wizard.declaration_bons_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('eb_group_wizard.declaration_bons_form')})]"/>
+    </record>
+
+    <menuitem id="menu_dash_bon_cn" name="B. Cn. Encours" parent="project_custom.menu_dashboard" sequence="60"
+              action="action_dash_bon_cn"/>
+
+    <!--    B. Cr. Encours    -->
+
+    <record id="action_dash_bon_cr" model="ir.actions.act_window">
+        <field name="name">B. Cr. Encours</field>
+        <field name="type">ir.actions.act_window</field>
+        <field name="res_model">base.group.merge.automatic.wizard</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'tree', 'view_id': ref('eb_group_wizard.declaration_bons_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('eb_group_wizard.declaration_bons_form')})]"/>
+    </record>
+
+    <menuitem id="menu_dash_bon_cr" name="B. Cr. Encours" parent="project_custom.menu_dashboard" sequence="70"
+              action="action_dash_bon_cr"/>
+
+</odoo>
